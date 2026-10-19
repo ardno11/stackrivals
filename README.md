@@ -19,13 +19,20 @@ Tetris pro dva hráče na jedné klávesnici. Stačí otevřít `index.html` v p
 - Zeď je proto vždy jen jedné barvy a její výška ukazuje, o kolik řad vede hráč, kterému patří. Hrací pole se nezanáší.
 - Hráč prohraje, když se mu nová kostka nevejde na jeho polovinu, nebo když ho soupeř vytlačí přes okraj pole.
 
+## Zobrazení: jedno pole, nebo dvě pole
+
+Na úvodní obrazovce, během pauzy a po konci hry si hráči tlačítkem nebo klávesou `M` vyberou zobrazení. Volba se pamatuje i po zavření prohlížeče.
+
+- **Jedno pole:** obě poloviny jsou v jednom společném poli. Hráč 1 hraje shora, hráč 2 zdola.
+- **Dvě pole:** každý hráč má své pole a kostky mu padají shora. Pole hráče 2 ukazuje stejnou hru, jen svisle převrácenou. Každý tak vidí svou polovinu nahoře a pod čárou ve středu sleduje soupeře. Pravidla se nemění.
+
 ## Ovládání
 
-| Akce            | Hráč 1 (shora) | Hráč 2 (zdola) |
-|-----------------|----------------|----------------|
-| Pohyb           | `A` / `D`      | `←` / `→`      |
-| Otočení         | `W`            | `↓`            |
-| Zrychlení       | `S`            | `↑`            |
-| Shození         | `Mezerník`     | `Enter`        |
+| Akce            | Hráč 1         | Hráč 2 – jedno pole | Hráč 2 – dvě pole |
+|-----------------|----------------|---------------------|-------------------|
+| Pohyb           | `A` / `D`      | `←` / `→`           | `←` / `→`         |
+| Otočení         | `W`            | `↓`                 | `↑`               |
+| Zrychlení       | `S`            | `↑`                 | `↓`               |
+| Shození         | `Mezerník`     | `Enter`             | `Enter`           |
 
-`P` nebo `Esc` hru pozastaví, `R` spustí novou hru (během pauzy nebo po konci hry).
+`P` nebo `Esc` hru pozastaví, `R` spustí novou hru (během pauzy nebo po konci hry), `M` přepne zobrazení (mimo běžící hru).

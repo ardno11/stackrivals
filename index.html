@@ -9,7 +9,7 @@
 <body>
   <main id="app">
     <aside class="panel p1">
-      <h2>Hráč 1 <small>(shora)</small></h2>
+      <h2>Hráč 1 <small class="only-single">(shora)</small><small class="only-dual">(levé pole)</small></h2>
       <div class="label">Další kostka</div>
       <canvas id="next1" class="next"></canvas>
       <dl>
@@ -26,15 +26,18 @@
     </aside>
 
     <div class="board-wrap">
-      <canvas id="board"></canvas>
+      <canvas id="board" class="board"></canvas>
+      <canvas id="board2" class="board"></canvas>
       <div id="overlay" class="overlay"></div>
     </div>
 
     <aside class="panel p2">
       <div class="controls">
         <div><kbd>←</kbd> <kbd>→</kbd> pohyb</div>
-        <div><kbd>↓</kbd> otočení</div>
-        <div><kbd>↑</kbd> zrychlit</div>
+        <div class="only-single"><kbd>↓</kbd> otočení</div>
+        <div class="only-single"><kbd>↑</kbd> zrychlit</div>
+        <div class="only-dual"><kbd>↑</kbd> otočení</div>
+        <div class="only-dual"><kbd>↓</kbd> zrychlit</div>
         <div><kbd>Enter</kbd> shodit</div>
         <div class="common"><kbd>P</kbd> pauza &nbsp; <kbd>R</kbd> nová hra</div>
       </div>
@@ -44,7 +47,7 @@
       </dl>
       <div class="label">Další kostka</div>
       <canvas id="next2" class="next"></canvas>
-      <h2>Hráč 2 <small>(zdola)</small></h2>
+      <h2>Hráč 2 <small class="only-single">(zdola)</small><small class="only-dual">(pravé pole)</small></h2>
     </aside>
   </main>
   <script src="game.js"></script>

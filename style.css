@@ -27,6 +27,18 @@ html, body {
 .panel.p1 { justify-content: flex-start; }
 .panel.p2 { justify-content: flex-end; }
 
+/* V režimu dvou polí hraje i hráč 2 shora, takže jeho panel řadíme jako panel hráče 1. */
+.dual .panel.p2 { justify-content: flex-start; }
+.dual .p2 h2 { order: 0; }
+.dual .p2 .label { order: 1; }
+.dual .p2 .next { order: 2; }
+.dual .p2 dl { order: 3; }
+.dual .p2 .controls { order: 4; }
+
+.dual .only-single,
+#app:not(.dual) .only-dual,
+#app:not(.dual) #board2 { display: none; }
+
 .panel h2 { margin: 0; font-size: 22px; }
 .panel h2 small { font-size: 13px; font-weight: normal; opacity: 0.7; }
 .p1 h2 { color: #4fc3f7; }
@@ -71,9 +83,11 @@ kbd {
 .board-wrap {
   position: relative;
   align-self: center;
+  display: flex;
+  gap: 24px;
 }
 
-#board {
+.board {
   display: block;
   border: 2px solid #1d2435;
   border-radius: 4px;
@@ -99,3 +113,23 @@ kbd {
 .overlay .winner-2 { color: #ff7043; }
 .overlay p { margin: 0; }
 .overlay .hint { opacity: 0.75; font-size: 13px; }
+
+.mode-switch {
+  display: inline-flex;
+  margin-top: 6px;
+  border: 1px solid #3a4560;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.mode-switch button {
+  padding: 6px 14px;
+  border: 0;
+  background: #141a28;
+  color: inherit;
+  font: inherit;
+  white-space: nowrap;
+  cursor: pointer;
+}
+.mode-switch button + button { border-left: 1px solid #3a4560; }
+.mode-switch button:hover { background: #1d2538; }
+.mode-switch button.active { background: #2b3a5c; font-weight: bold; }

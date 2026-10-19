@@ -41,6 +41,16 @@
     return r;
   }
 
+  function rotateCCW(m) {
+    const n = m.length;
+    const r = [];
+    for (let y = 0; y < n; y++) {
+      r.push([]);
+      for (let x = 0; x < n; x++) r[y].push(m[x][n - 1 - y]);
+    }
+    return r;
+  }
+
   function emptyRow() { return new Array(COLS).fill(EMPTY); }
   function wallRow(v) { return new Array(COLS).fill(v); }
 
@@ -185,10 +195,11 @@
       return true;
     }
 
-    rotate(p) {
+    // dir = 1 po směru hodinových ručiček, -1 proti směru.
+    rotate(p, dir = 1) {
       if (!this.canAct(p)) return false;
       const pc = p.piece;
-      const m = rotateCW(pc.matrix);
+      const m = dir < 0 ? rotateCCW(pc.matrix) : rotateCW(pc.matrix);
       const e = p.edgeDir;
       const d = p.dir;
       const kicks = [[0, 0], [-1, 0], [1, 0], [-2, 0], [2, 0], [0, e], [-1, e], [1, e], [0, d], [0, 2 * d]];
@@ -392,22 +403,35 @@
     const game = new Game();
     global.game = game;
 
-    const board = document.getElementById('board');
-    const ctx = board.getContext('2d');
+    const app = document.getElementById('app');
+    // Plátno 1 je pohled hráče 1. Plátno 2 je pohled hráče 2 – stejná hrací plocha,
+    // jen svisle převrácená, aby mu kostky padaly shora (zobrazuje se jen v režimu dvou polí).
+    const views = [
+      { canvas: document.getElementById('board'), flip: false },
+      { canvas: document.getElementById('board2'), flip: true },
+    ];
+    for (const v of views) v.ctx = v.canvas.getContext('2d');
     const nextCanvases = { 1: document.getElementById('next1'), 2: document.getElementById('next2') };
     const overlay = document.getElementById('overlay');
     const el = id => document.getElementById(id);
     let cell = 20;
+    let dual = false;
 
     function resize() {
-      cell = Math.max(10, Math.min(28, Math.floor((window.innerHeight - 30) / ROWS)));
-      board.width = COLS * cell;
-      board.height = ROWS * cell;
+      const boards = dual ? 2 : 1;
+      // Šířka bočních panelů, mezer a okrajů (viz style.css).
+      const chrome = 2 * 200 + (boards + 1) * 24 + 24 + boards * 4;
+      const byHeight = Math.floor((window.innerHeight - 30) / ROWS);
+      const byWidth = Math.floor((window.innerWidth - chrome) / (boards * COLS));
+      cell = Math.max(10, Math.min(28, byHeight, byWidth));
+      for (const v of views) {
+        v.canvas.width = COLS * cell;
+        v.canvas.height = ROWS * cell;
+      }
       const n = Math.round(cell * 0.9) * 4;
       for (const c of Object.values(nextCanvases)) { c.width = n; c.height = n; }
     }
     window.addEventListener('resize', resize);
-    resize();
 
     // --- Ovládání s vlastním opakováním kláves (aby mohli držet klávesy oba hráči) ---
     const KEYMAP = {
@@ -415,9 +439,23 @@
       ArrowLeft: [2, 'left'], ArrowRight: [2, 'right'], ArrowUp: [2, 'soft'], ArrowDown: [2, 'rotate'],
       Enter: [2, 'hard'], NumpadEnter: [2, 'hard'],
     };
+    // V režimu dvou polí padají hráči 2 kostky na obrazovce dolů, proto šipky prohodíme.
+    const KEYMAP_DUAL = { ...KEYMAP, ArrowUp: [2, 'rotate'], ArrowDown: [2, 'soft'] };
     const DAS = { left: 160, right: 160, soft: 0 };
     const ARR = { left: 50, right: 50, soft: 35 };
     const held = new Map(); // code -> { player, action, timer }
+
+    const MODE_KEY = 'tetris-view-mode';
+    function setDual(value) {
+      dual = value;
+      app.classList.toggle('dual', dual);
+      held.clear();
+      try { localStorage.setItem(MODE_KEY, dual ? 'dual' : 'single'); } catch (e) { /* bez úložiště */ }
+      resize();
+    }
+    let savedMode = null;
+    try { savedMode = localStorage.getItem(MODE_KEY); } catch (e) { /* bez úložiště */ }
+    setDual(savedMode === 'dual');
 
     function act(pid, action) {
       const p = game.players[pid - 1];
@@ -425,17 +463,30 @@
         case 'left': game.move(p, -1); break;
         case 'right': game.move(p, 1); break;
         case 'soft': game.softDrop(p); break;
-        case 'rotate': game.rotate(p); break;
+        // Převrácený pohled obrací směr otáčení, takže hráč 2 otáčí opačně,
+        // aby se mu kostka na obrazovce točila po směru hodinových ručiček.
+        case 'rotate': game.rotate(p, dual && pid === 2 ? -1 : 1); break;
         case 'hard': game.hardDrop(p); break;
       }
     }
 
+    overlay.addEventListener('click', e => {
+      const btn = e.target.closest('[data-mode]');
+      if (!btn || game.state === 'playing') return;
+      btn.blur();
+      setDual(btn.dataset.mode === 'dual');
+    });
+
     window.addEventListener('keydown', e => {
-      const mapped = KEYMAP[e.code];
-      if (mapped || e.code === 'KeyP' || e.code === 'KeyR' || e.code === 'Escape') e.preventDefault();
+      const mapped = (dual ? KEYMAP_DUAL : KEYMAP)[e.code];
+      if (mapped || ['KeyP', 'KeyR', 'KeyM', 'Escape'].includes(e.code)) e.preventDefault();
 
       if (game.state === 'ready' && (e.code === 'Space' || e.code === 'Enter' || e.code === 'NumpadEnter')) {
         if (!e.repeat) game.start();
+        return;
+      }
+      if (e.code === 'KeyM') {
+        if (!e.repeat && game.state !== 'playing') setDual(!dual);
         return;
       }
       if (e.code === 'KeyP' || e.code === 'Escape') { if (!e.repeat) game.togglePause(); return; }
@@ -465,45 +516,70 @@
 
     // --- Vykreslení ---
     function render() {
+      renderBoard(views[0]);
+      if (dual) renderBoard(views[1]);
+
+      renderNext(game.players[0], false);
+      renderNext(game.players[1], dual);
+
+      el('sent1').textContent = game.players[0].sent;
+      el('sent2').textContent = game.players[1].sent;
+      el('space1').textContent = game.space(game.players[0]);
+      el('space2').textContent = game.space(game.players[1]);
+      el('level').textContent = game.level();
+
+      renderOverlay();
+    }
+
+    // Vykreslí celou hrací plochu; při flip je svisle převrácená (řada 0 dole).
+    function renderBoard({ canvas, ctx, flip }) {
       const s = cell;
+      const W = canvas.width;
+      const ry = y => (flip ? ROWS - 1 - y : y) * s;
+      // Obdélník přes řady [a, b)
+      const band = (a, b) => [(flip ? ROWS - b : a) * s, (b - a) * s];
+
       ctx.fillStyle = '#0b0e17';
-      ctx.fillRect(0, 0, board.width, board.height);
+      ctx.fillRect(0, 0, W, canvas.height);
+      let [y0, h] = band(0, game.wallTop);
       ctx.fillStyle = '#0f1a33';
-      ctx.fillRect(0, 0, board.width, game.wallTop * s);
+      ctx.fillRect(0, y0, W, h);
+      [y0, h] = band(game.wallBot, ROWS);
       ctx.fillStyle = '#2a1119';
-      ctx.fillRect(0, game.wallBot * s, board.width, (ROWS - game.wallBot) * s);
+      ctx.fillRect(0, y0, W, h);
 
       ctx.strokeStyle = 'rgba(255,255,255,0.04)';
       ctx.lineWidth = 1;
       ctx.beginPath();
-      for (let x = 1; x < COLS; x++) { ctx.moveTo(x * s + 0.5, 0); ctx.lineTo(x * s + 0.5, board.height); }
-      for (let y = 1; y < ROWS; y++) { ctx.moveTo(0, y * s + 0.5); ctx.lineTo(board.width, y * s + 0.5); }
+      for (let x = 1; x < COLS; x++) { ctx.moveTo(x * s + 0.5, 0); ctx.lineTo(x * s + 0.5, canvas.height); }
+      for (let y = 1; y < ROWS; y++) { ctx.moveTo(0, y * s + 0.5); ctx.lineTo(W, y * s + 0.5); }
       ctx.stroke();
 
       for (let y = 0; y < ROWS; y++) {
         for (let x = 0; x < COLS; x++) {
           const v = game.grid[y][x];
           if (v === EMPTY) continue;
-          if (v === WALL_P1 || v === WALL_P2) drawWall(ctx, x * s, y * s, s, cellColor(v));
-          else drawBlock(ctx, x * s, y * s, s, cellColor(v));
+          if (v === WALL_P1 || v === WALL_P2) drawWall(ctx, x * s, ry(y), s, cellColor(v));
+          else drawBlock(ctx, x * s, ry(y), s, cellColor(v));
         }
       }
 
       if (game.flash) {
         const top = Math.max(0, game.wallTop - 1);
         const bot = Math.min(ROWS, game.wallBot + 1);
+        [y0, h] = band(top, bot);
         ctx.fillStyle = PLAYER_COLORS[game.flash.player];
         ctx.globalAlpha = Math.min(1, game.flash.time / 400) * 0.45;
-        ctx.fillRect(0, top * s, board.width, (bot - top) * s);
+        ctx.fillRect(0, y0, W, h);
         ctx.globalAlpha = 1;
       }
 
-      // Původní střed hrací plochy
+      // Původní střed hrací plochy (při převrácení zůstává na stejném místě)
       ctx.setLineDash([6, 6]);
       ctx.strokeStyle = 'rgba(255,255,255,0.35)';
       ctx.beginPath();
       ctx.moveTo(0, HALF * s + 0.5);
-      ctx.lineTo(board.width, HALF * s + 0.5);
+      ctx.lineTo(W, HALF * s + 0.5);
       ctx.stroke();
       ctx.setLineDash([]);
 
@@ -515,35 +591,27 @@
         ctx.strokeStyle = color;
         ctx.globalAlpha = 0.45;
         pc.matrix.forEach((r, my) => r.forEach((c, mx) => {
-          if (c) ctx.strokeRect((pc.x + mx) * s + 2.5, (gy + my) * s + 2.5, s - 5, s - 5);
+          if (c) ctx.strokeRect((pc.x + mx) * s + 2.5, ry(gy + my) + 2.5, s - 5, s - 5);
         }));
         ctx.globalAlpha = 1;
         pc.matrix.forEach((r, my) => r.forEach((c, mx) => {
-          if (c) drawBlock(ctx, (pc.x + mx) * s, (pc.y + my) * s, s, color);
+          if (c) drawBlock(ctx, (pc.x + mx) * s, ry(pc.y + my), s, color);
         }));
       }
 
-      for (const p of game.players) renderNext(p);
-      renderFlashText(s);
-
-      el('sent1').textContent = game.players[0].sent;
-      el('sent2').textContent = game.players[1].sent;
-      el('space1').textContent = game.space(game.players[0]);
-      el('space2').textContent = game.space(game.players[1]);
-      el('level').textContent = game.level();
-
-      renderOverlay();
+      renderFlashText(ctx, canvas, s, flip);
     }
 
     const FLASH_LABELS = ['', '', 'Dvojitá', 'Trojitá', 'TETRIS'];
 
-    function renderFlashText(s) {
+    function renderFlashText(ctx, canvas, s, flip) {
       const f = game.flash;
       if (!f) return;
       const label = (FLASH_LABELS[f.lines] ? FLASH_LABELS[f.lines] + '  ' : '') + '+' + f.power;
       const elapsed = FLASH_TIME - f.time;
       const rise = Math.min(1, elapsed / 600) * s;
-      const y = f.player === 1 ? game.wallTop * s - 2 * s - rise : game.wallBot * s + 2 * s + rise;
+      let y = f.player === 1 ? game.wallTop * s - 2 * s - rise : game.wallBot * s + 2 * s + rise;
+      if (flip) y = canvas.height - y;
       ctx.save();
       ctx.globalAlpha = Math.min(1, f.time / 400);
       ctx.font = `bold ${Math.round(s * (f.lines >= 4 ? 1.4 : 1.1))}px system-ui, sans-serif`;
@@ -551,18 +619,19 @@
       ctx.textBaseline = 'middle';
       ctx.lineWidth = 4;
       ctx.strokeStyle = 'rgba(0,0,0,0.85)';
-      ctx.strokeText(label, board.width / 2, y);
+      ctx.strokeText(label, canvas.width / 2, y);
       ctx.fillStyle = f.lines >= 4 ? '#ffeb3b' : PLAYER_COLORS[f.player];
-      ctx.fillText(label, board.width / 2, y);
+      ctx.fillText(label, canvas.width / 2, y);
       ctx.restore();
     }
 
-    function renderNext(p) {
+    function renderNext(p, flip) {
       const c = nextCanvases[p.id];
       const nctx = c.getContext('2d');
       nctx.clearRect(0, 0, c.width, c.height);
       if (!p.nextType) return;
       const m = game.shapeFor(p, p.nextType);
+      if (flip) m.reverse();
       const cs = c.width / 4;
       const cells = [];
       m.forEach((r, y) => r.forEach((v, x) => { if (v) cells.push([x, y]); }));
@@ -575,22 +644,34 @@
       for (const [x, y] of cells) drawBlock(nctx, ox + x * cs, oy + y * cs, cs, color);
     }
 
+    function modeSwitch() {
+      return '<div class="mode-switch">' +
+        `<button type="button" data-mode="single" class="${dual ? '' : 'active'}">Jedno pole</button>` +
+        `<button type="button" data-mode="dual" class="${dual ? 'active' : ''}">Dvě pole</button>` +
+        '</div><p class="hint"><kbd>M</kbd> přepnout zobrazení</p>';
+    }
+
     let lastOverlay = null;
     function renderOverlay() {
       let html = '';
       if (game.state === 'ready') {
         html = '<h1>Tetris<br>přetlačovaná</h1>' +
-          '<p>Hráč 1 hraje shora, hráč 2 zdola.</p>' +
+          (dual
+            ? '<p>Každý hráč má své pole a kostky mu padají shora. Pod čárou ve středu vidíš, jak hraje soupeř.</p>'
+            : '<p>Hráč 1 hraje shora, hráč 2 zdola.</p>') +
           '<p>Plná řada nezmizí – stane se zdí a zatlačí soupeře o řadu dál. ' +
           'Soupeřovu zeď naopak tvoje plná řada zničí a uvolní ti místo.</p>' +
           '<p>Víc řad najednou = silnější útok: 1 / 2 / 4 / 6.</p>' +
           '<p>Vytlač soupeře z jeho poloviny!</p>' +
+          modeSwitch() +
           '<p class="hint">Start: <kbd>Mezerník</kbd> nebo <kbd>Enter</kbd></p>';
       } else if (game.state === 'paused') {
-        html = '<h1>Pauza</h1><p class="hint"><kbd>P</kbd> pokračovat &nbsp; <kbd>R</kbd> nová hra</p>';
+        html = '<h1>Pauza</h1>' + modeSwitch() +
+          '<p class="hint"><kbd>P</kbd> pokračovat &nbsp; <kbd>R</kbd> nová hra</p>';
       } else if (game.state === 'over') {
         html = `<h1 class="winner-${game.winner}">Vítězí hráč ${game.winner}!</h1>` +
           `<p>Hráč ${game.winner === 1 ? 2 : 1} prohrál: ${game.reason}</p>` +
+          modeSwitch() +
           '<p class="hint"><kbd>R</kbd> nová hra</p>';
       }
       if (html !== lastOverlay) {
