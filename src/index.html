@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tetris – přetlačovaná</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main id="app">
+    <aside class="panel p1">
+      <h2>Hráč 1 <small>(shora)</small></h2>
+      <div class="label">Další kostka</div>
+      <canvas id="next1" class="next"></canvas>
+      <dl>
+        <dt>Útok celkem</dt><dd id="sent1">0</dd>
+        <dt>Prostor</dt><dd id="space1">20</dd>
+        <dt>Úroveň</dt><dd id="level">1</dd>
+      </dl>
+      <div class="controls">
+        <div><kbd>A</kbd> <kbd>D</kbd> pohyb</div>
+        <div><kbd>W</kbd> otočení</div>
+        <div><kbd>S</kbd> zrychlit</div>
+        <div><kbd>Mezerník</kbd> shodit</div>
+      </div>
+    </aside>
+
+    <div class="board-wrap">
+      <canvas id="board"></canvas>
+      <div id="overlay" class="overlay"></div>
+    </div>
+
+    <aside class="panel p2">
+      <div class="controls">
+        <div><kbd>←</kbd> <kbd>→</kbd> pohyb</div>
+        <div><kbd>↓</kbd> otočení</div>
+        <div><kbd>↑</kbd> zrychlit</div>
+        <div><kbd>Enter</kbd> shodit</div>
+        <div class="common"><kbd>P</kbd> pauza &nbsp; <kbd>R</kbd> nová hra</div>
+      </div>
+      <dl>
+        <dt>Útok celkem</dt><dd id="sent2">0</dd>
+        <dt>Prostor</dt><dd id="space2">20</dd>
+      </dl>
+      <div class="label">Další kostka</div>
+      <canvas id="next2" class="next"></canvas>
+      <h2>Hráč 2 <small>(zdola)</small></h2>
+    </aside>
+  </main>
+  <script src="game.js"></script>
+</body>
+</html>
