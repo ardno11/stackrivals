@@ -9,7 +9,7 @@
 <body>
   <main id="app">
     <aside class="panel p1">
-      <h2>Hráč 1 <small class="only-single">(shora)</small><small class="only-dual">(levé pole)</small></h2>
+      <h2><span id="name1">Hráč 1</span> <small class="only-single">(shora)</small><small class="only-dual">(levé pole)</small></h2>
       <div class="label">Další kostka</div>
       <canvas id="next1" class="next"></canvas>
       <dl>
@@ -47,9 +47,95 @@
       </dl>
       <div class="label">Další kostka</div>
       <canvas id="next2" class="next"></canvas>
-      <h2>Hráč 2 <small class="only-single">(zdola)</small><small class="only-dual">(pravé pole)</small></h2>
+      <h2><span id="name2">Hráč 2</span> <small class="only-single">(zdola)</small><small class="only-dual">(pravé pole)</small></h2>
     </aside>
   </main>
+  <div id="menu" class="menu">
+    <canvas id="menuBg" class="menu-bg"></canvas>
+    <section data-view="main" class="menu-card">
+      <h1>Tetris<br>přetlačovaná</h1>
+      <button type="button" class="btn btn-primary" data-go="mode">Hrát</button>
+      <button type="button" class="btn btn-secondary" data-go="tsetup">Vytvořit turnaj</button>
+      <button type="button" class="btn btn-secondary" data-go="settings">Nastavení</button>
+    </section>
+
+    <section data-view="mode" class="menu-card" hidden>
+      <h2>Kde chcete hrát?</h2>
+      <div class="mode-choice">
+        <button type="button" class="btn" data-start="single">Jedno pole</button>
+        <button type="button" class="btn" data-start="dual">Dvě pole</button>
+      </div>
+      <p class="hint">Jedno pole: hráč 1 hraje shora, hráč 2 zdola.<br>Dvě pole: každý má své pole a kostky mu padají shora.</p>
+      <button type="button" class="btn btn-link" data-go="main">Zpět</button>
+    </section>
+
+    <section data-view="tsetup" class="menu-card" hidden>
+      <h2>Vytvořit turnaj</h2>
+
+      <div class="group">
+        <h3>Počet hráčů</h3>
+        <div class="stepper">
+          <button type="button" class="btn" data-count="-1" aria-label="Méně hráčů">−</button>
+          <output id="tCount">4</output>
+          <button type="button" class="btn" data-count="1" aria-label="Více hráčů">+</button>
+        </div>
+      </div>
+
+      <div class="group">
+        <h3>Jména hráčů</h3>
+        <div id="tNames" class="tnames"></div>
+      </div>
+
+      <div class="group">
+        <h3>Hrací pole</h3>
+        <div class="seg">
+          <button type="button" class="btn" data-tmode="single">Jedno pole</button>
+          <button type="button" class="btn" data-tmode="dual">Dvě pole</button>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-secondary" id="tCreate">Vytvořit pavouka</button>
+      <button type="button" class="btn btn-link" data-go="main">Zpět</button>
+    </section>
+
+    <section data-view="bracket" class="menu-card wide" hidden>
+      <h2 id="bracketTitle">Pavouk turnaje</h2>
+      <p id="bracketMsg" class="bracket-msg"></p>
+      <div id="bracket" class="bracket"></div>
+      <button type="button" class="btn btn-primary" id="bracketAction">Zahájit turnaj</button>
+      <button type="button" class="btn btn-link" id="bracketCancel">Zrušit turnaj</button>
+    </section>
+
+    <section data-view="settings" class="menu-card" hidden>
+      <h2>Nastavení</h2>
+
+      <div class="group">
+        <h3>Jména hráčů</h3>
+        <label class="field">Jméno 1. hráče
+          <input type="text" id="nameInput1" maxlength="16" placeholder="Hráč 1" autocomplete="off">
+        </label>
+        <label class="field">Jméno 2. hráče
+          <input type="text" id="nameInput2" maxlength="16" placeholder="Hráč 2" autocomplete="off">
+        </label>
+        <button type="button" class="btn btn-secondary" id="resetNames">Resetovat jména</button>
+      </div>
+
+      <div class="group">
+        <h3>Vzhled</h3>
+        <div class="seg">
+          <button type="button" class="btn" data-look="classic">Klasický</button>
+          <button type="button" class="btn" data-look="colorblind">Pro barvoslepé</button>
+        </div>
+        <div id="cbTypes" class="cb-types" hidden>
+          <button type="button" class="btn" data-cb="protanopia"><b>Protanopie</b><small>slabá červená a zelená</small></button>
+          <button type="button" class="btn" data-cb="tritanopia"><b>Tritanopie</b><small>slabá žlutá a modrá</small></button>
+          <button type="button" class="btn" data-cb="monochromacy"><b>Monochromacie</b><small>nevidí žádné barvy</small></button>
+        </div>
+      </div>
+
+      <button type="button" class="btn btn-link" data-go="main">Zpět</button>
+    </section>
+  </div>
   <script src="game.js"></script>
 </body>
 </html>

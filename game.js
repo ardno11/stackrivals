@@ -370,19 +370,59 @@
   // ---------------------------------------------------------------------------
   // Vykreslování a ovládání (jen v prohlížeči)
   // ---------------------------------------------------------------------------
-  const PALETTE = {
-    1: ['#4fc3f7', '#80deea', '#7986cb', '#26c6da', '#42a5f5', '#5c6bc0', '#4dd0e1'],
-    2: ['#ef5350', '#ffb74d', '#ec407a', '#ff7043', '#f44336', '#ff8a65', '#ffa726'],
+  // Vzhledy. Hráči se liší odstínem i jasem, aby je šlo rozeznat i při poruše barevného vidění:
+  // protanopie/deuteranopie plete červenou se zelenou, tritanopie modrou se žlutou,
+  // monochromacie nevidí barvy vůbec (rozhoduje jen jas a vzorek na kostkách hráče 2).
+  const THEMES = {
+    classic: {
+      blocks: {
+        1: ['#4fc3f7', '#80deea', '#7986cb', '#26c6da', '#42a5f5', '#5c6bc0', '#4dd0e1'],
+        2: ['#ef5350', '#ffb74d', '#ec407a', '#ff7043', '#f44336', '#ff8a65', '#ffa726'],
+      },
+      walls: { [WALL_P1]: '#2f4d73', [WALL_P2]: '#73303d' },
+      bg: ['#0b0e17', '#0f1a33', '#2a1119'],
+      accent: { 1: '#4fc3f7', 2: '#ff7043' },
+      pattern: false,
+    },
+    protanopia: {
+      blocks: {
+        1: ['#4fc3f7', '#64b5f6', '#42a5f5', '#2196f3', '#5c9bff', '#7aa7ff', '#3d8bfd'],
+        2: ['#ffd54f', '#ffca28', '#ffee58', '#fdd835', '#ffe082', '#f9c846', '#fff176'],
+      },
+      walls: { [WALL_P1]: '#3b6fb8', [WALL_P2]: '#b89a1e' },
+      bg: ['#060607', '#141a26', '#26220f'],
+      accent: { 1: '#4fc3f7', 2: '#ffd54f' },
+      pattern: true,
+    },
+    tritanopia: {
+      blocks: {
+        1: ['#26c6da', '#4dd0e1', '#00bcd4', '#80deea', '#26a69a', '#4db6ac', '#00acc1'],
+        2: ['#ef5350', '#e53935', '#ff6f61', '#f06292', '#d81b60', '#ff8a80', '#ec407a'],
+      },
+      walls: { [WALL_P1]: '#1f8a94', [WALL_P2]: '#b0343d' },
+      bg: ['#060707', '#10191a', '#251214'],
+      accent: { 1: '#26c6da', 2: '#ef5350' },
+      pattern: true,
+    },
+    monochromacy: {
+      blocks: {
+        1: ['#f5f5f5', '#eeeeee', '#e0e0e0', '#fafafa', '#e8e8e8', '#d6d6d6', '#f0f0f0'],
+        2: ['#6e6e6e', '#777777', '#808080', '#686868', '#737373', '#7b7b7b', '#6a6a6a'],
+      },
+      walls: { [WALL_P1]: '#9e9e9e', [WALL_P2]: '#4a4a4a' },
+      bg: ['#0c0c0c', '#2a2a2a', '#000000'],
+      accent: { 1: '#f5f5f5', 2: '#9a9a9a' },
+      pattern: true,
+    },
   };
-  const WALL_COLORS = { [WALL_P1]: '#2f4d73', [WALL_P2]: '#73303d' };
-  const PLAYER_COLORS = { 1: '#4fc3f7', 2: '#ff7043' };
+  let theme = THEMES.classic;
 
   function cellColor(v) {
-    if (v === WALL_P1 || v === WALL_P2) return WALL_COLORS[v];
-    return PALETTE[Math.floor(v / 10)][v % 10];
+    if (v === WALL_P1 || v === WALL_P2) return theme.walls[v];
+    return theme.blocks[Math.floor(v / 10)][v % 10];
   }
 
-  function drawBlock(ctx, px, py, s, color) {
+  function drawBlock(ctx, px, py, s, color, pattern) {
     ctx.fillStyle = color;
     ctx.fillRect(px + 1, py + 1, s - 2, s - 2);
     const b = Math.max(2, Math.round(s * 0.14));
@@ -390,6 +430,18 @@
     ctx.fillRect(px + 1, py + 1, s - 2, b);
     ctx.fillStyle = 'rgba(0,0,0,0.25)';
     ctx.fillRect(px + 1, py + s - 1 - b, s - 2, b);
+    if (pattern) {
+      ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+      ctx.lineWidth = 1;
+      const i = Math.round(s * 0.3);
+      ctx.strokeRect(px + i + 0.5, py + i + 0.5, s - 2 * i - 1, s - 2 * i - 1);
+    }
+  }
+
+  // Vykreslí jednu buňku podle hodnoty v mřížce (kostka hráče nebo zeď).
+  function drawCell(ctx, px, py, s, v) {
+    if (v === WALL_P1 || v === WALL_P2) drawWall(ctx, px, py, s, cellColor(v));
+    else drawBlock(ctx, px, py, s, cellColor(v), theme.pattern && Math.floor(v / 10) === 2);
   }
 
   function drawWall(ctx, px, py, s, color) {
@@ -445,17 +497,322 @@
     const ARR = { left: 50, right: 50, soft: 35 };
     const held = new Map(); // code -> { player, action, timer }
 
-    const MODE_KEY = 'tetris-view-mode';
     function setDual(value) {
       dual = value;
       app.classList.toggle('dual', dual);
       held.clear();
-      try { localStorage.setItem(MODE_KEY, dual ? 'dual' : 'single'); } catch (e) { /* bez úložiště */ }
       resize();
     }
-    let savedMode = null;
-    try { savedMode = localStorage.getItem(MODE_KEY); } catch (e) { /* bez úložiště */ }
-    setDual(savedMode === 'dual');
+    setDual(false);
+
+    // --- Jména hráčů ---
+    const NAMES_KEY = 'tetris-player-names';
+    const DEFAULT_NAMES = ['Hráč 1', 'Hráč 2'];
+    let names = DEFAULT_NAMES.slice();
+    try {
+      const saved = JSON.parse(localStorage.getItem(NAMES_KEY));
+      if (Array.isArray(saved)) names = DEFAULT_NAMES.map((d, i) => (typeof saved[i] === 'string' ? saved[i] : d));
+    } catch (e) { /* bez úložiště nebo poškozená data */ }
+
+    let tournament = null; // { dual, players, rounds, current, started, message }
+    let matchNames = null; // jména aktuálního zápasu turnaje
+    const nameOf = i => (matchNames ? matchNames[i] : names[i].trim() || DEFAULT_NAMES[i]);
+    const escapeHtml = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const nameInputs = [el('nameInput1'), el('nameInput2')];
+
+    function applyNames() {
+      el('name1').textContent = nameOf(0);
+      el('name2').textContent = nameOf(1);
+      try { localStorage.setItem(NAMES_KEY, JSON.stringify(names)); } catch (e) { /* bez úložiště */ }
+    }
+    nameInputs.forEach((input, i) => {
+      input.value = names[i];
+      input.addEventListener('input', () => { names[i] = input.value; applyNames(); });
+    });
+    el('resetNames').addEventListener('click', () => {
+      names = DEFAULT_NAMES.slice();
+      nameInputs.forEach((input, i) => { input.value = names[i]; });
+      applyNames();
+    });
+    applyNames();
+
+    // --- Hlavní menu ---
+    const menu = el('menu');
+    const menuOpen = () => !menu.hidden;
+
+    let currentView = 'main';
+    function showView(name) {
+      currentView = name;
+      for (const section of menu.querySelectorAll('[data-view]')) section.hidden = section.dataset.view !== name;
+      const first = menu.querySelector(`[data-view="${name}"] button, [data-view="${name}"] input`);
+      if (first) first.focus();
+    }
+
+    function showMenu() {
+      game.reset();
+      held.clear();
+      menu.hidden = false;
+      showView('main');
+    }
+
+    function startGame(mode) {
+      setDual(mode === 'dual');
+      game.reset();
+      game.start();
+      menu.hidden = true;
+      if (document.activeElement) document.activeElement.blur();
+    }
+
+    menu.addEventListener('click', e => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      if (btn.dataset.go) showView(btn.dataset.go);
+      else if (btn.dataset.start) startGame(btn.dataset.start);
+      else if (btn.dataset.look) { appearance.look = btn.dataset.look; applyAppearance(); }
+      else if (btn.dataset.cb) { appearance.cb = btn.dataset.cb; applyAppearance(); }
+    });
+    showView('main');
+
+    // --- Turnaj (pavouk, vyřazovací) ---
+    const MIN_PLAYERS = 2;
+    const MAX_PLAYERS = 16;
+    const BYE = -1;
+    let tCount = 4;
+    let tDual = false;
+    const tNameValues = new Array(MAX_PLAYERS).fill('');
+    const tNamesBox = el('tNames');
+
+    function renderTournamentSetup() {
+      el('tCount').textContent = tCount;
+      tNamesBox.innerHTML = '';
+      for (let i = 0; i < tCount; i++) {
+        const input = document.createElement('input');
+        input.type = 'text';
+        input.maxLength = 16;
+        input.autocomplete = 'off';
+        input.placeholder = `Hráč ${i + 1}`;
+        input.value = tNameValues[i];
+        input.addEventListener('input', () => { tNameValues[i] = input.value; });
+        tNamesBox.appendChild(input);
+      }
+      for (const b of menu.querySelectorAll('[data-tmode]')) b.classList.toggle('active', (b.dataset.tmode === 'dual') === tDual);
+    }
+
+    function shuffle(arr) {
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    // Zápasy bez soupeře (volný los) rovnou postupují; vítěz zápasu postupuje do dalšího kola.
+    function propagate(t) {
+      for (let r = 0; r < t.rounds.length; r++) {
+        for (let i = 0; i < t.rounds[r].length; i++) {
+          const m = t.rounds[r][i];
+          if (m.winner === null && m.a !== null && m.b !== null && (m.a === BYE || m.b === BYE)) m.winner = m.a === BYE ? 1 : 0;
+          if (m.winner !== null && r + 1 < t.rounds.length) {
+            t.rounds[r + 1][i >> 1][i % 2 ? 'b' : 'a'] = m.winner === 0 ? m.a : m.b;
+          }
+        }
+      }
+    }
+
+    function createTournament() {
+      const players = [];
+      for (let i = 0; i < tCount; i++) players.push(tNameValues[i].trim() || `Hráč ${i + 1}`);
+      let size = 2;
+      while (size < players.length) size *= 2;
+      const matchCount = size / 2;
+      const byes = size - players.length;
+      const ids = shuffle(players.map((_, i) => i));
+      const byeMatches = new Set(shuffle([...Array(matchCount).keys()]).slice(0, byes));
+      const first = [];
+      for (let i = 0; i < matchCount; i++) {
+        first.push({ a: ids.pop(), b: byeMatches.has(i) ? BYE : ids.pop(), winner: null });
+      }
+      const rounds = [first];
+      for (let n = matchCount / 2; n >= 1; n /= 2) {
+        rounds.push(Array.from({ length: n }, () => ({ a: null, b: null, winner: null })));
+      }
+      tournament = { dual: tDual, players, rounds, current: null, started: false, message: '' };
+      propagate(tournament);
+    }
+
+    function nextMatch() {
+      for (const round of tournament.rounds) {
+        for (const m of round) {
+          if (m.winner === null && m.a !== null && m.b !== null && m.a !== BYE && m.b !== BYE) return m;
+        }
+      }
+      return null;
+    }
+
+    function roundName(r, total) {
+      const fromEnd = total - 1 - r;
+      return ['Finále', 'Semifinále', 'Čtvrtfinále', 'Osmifinále'][fromEnd] || `Kolo ${r + 1}`;
+    }
+
+    function renderBracket() {
+      const t = tournament;
+      const champion = t.rounds[t.rounds.length - 1][0].winner !== null ? t.rounds[t.rounds.length - 1][0] : null;
+      const next = champion ? null : nextMatch();
+      const slot = (m, side) => {
+        const id = side === 0 ? m.a : m.b;
+        if (id === BYE) return '<div class="slot bye">volný los</div>';
+        if (id === null) return '<div class="slot empty">?</div>';
+        let cls = 'slot';
+        if (m.winner !== null) cls += m.winner === side ? ' won' : ' lost';
+        return `<div class="${cls}">${escapeHtml(t.players[id])}</div>`;
+      };
+      el('bracket').innerHTML = t.rounds.map((round, r) =>
+        `<div class="round"><h4>${roundName(r, t.rounds.length)}</h4><div class="matches">` +
+        round.map(m => `<div class="match${m === next ? ' next' : ''}">${slot(m, 0)}${slot(m, 1)}</div>`).join('') +
+        '</div></div>').join('');
+
+      el('bracketTitle').textContent = champion ? 'Turnaj skončil' : 'Pavouk turnaje';
+      let msg = t.message;
+      if (champion) msg = `Vítěz turnaje: ${t.players[champion.winner === 0 ? champion.a : champion.b]}`;
+      else if (next) msg = (msg ? msg + ' ' : '') + `Další zápas: ${t.players[next.a]} – ${t.players[next.b]}.`;
+      el('bracketMsg').textContent = msg;
+      el('bracketMsg').classList.toggle('champion', !!champion);
+      el('bracketAction').textContent = champion ? 'Hlavní menu' : (t.started ? 'Další zápas' : 'Zahájit turnaj');
+      el('bracketCancel').hidden = !!champion;
+    }
+
+    function startMatch() {
+      const m = nextMatch();
+      if (!m) return;
+      tournament.current = m;
+      tournament.started = true;
+      matchNames = [tournament.players[m.a], tournament.players[m.b]];
+      applyNames();
+      setDual(tournament.dual);
+      game.reset();
+      game.start();
+      menu.hidden = true;
+      if (document.activeElement) document.activeElement.blur();
+    }
+
+    function finishMatch() {
+      const m = tournament.current;
+      const side = game.winner - 1;
+      const winner = tournament.players[side === 0 ? m.a : m.b];
+      const loser = tournament.players[side === 0 ? m.b : m.a];
+      m.winner = side;
+      tournament.current = null;
+      tournament.message = `${winner} postupuje, ${loser} vypadává.`;
+      propagate(tournament);
+      matchNames = null;
+      applyNames();
+      game.reset();
+      held.clear();
+      menu.hidden = false;
+      showView('bracket');
+      renderBracket();
+    }
+
+    function endTournament() {
+      tournament = null;
+      matchNames = null;
+      applyNames();
+      showMenu();
+    }
+
+    menu.addEventListener('click', e => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      if (btn.dataset.go === 'tsetup') renderTournamentSetup();
+      else if (btn.dataset.count) {
+        tCount = Math.max(MIN_PLAYERS, Math.min(MAX_PLAYERS, tCount + Number(btn.dataset.count)));
+        renderTournamentSetup();
+      } else if (btn.dataset.tmode) { tDual = btn.dataset.tmode === 'dual'; renderTournamentSetup(); }
+      else if (btn.id === 'tCreate') { createTournament(); showView('bracket'); renderBracket(); }
+      else if (btn.id === 'bracketAction') {
+        if (nextMatch()) startMatch();
+        else endTournament();
+      } else if (btn.id === 'bracketCancel') {
+        if (confirm('Zrušit turnaj? Průběh se ztratí.')) endTournament();
+      }
+    });
+
+    // --- Vzhled ---
+    const APPEARANCE_KEY = 'tetris-appearance';
+    const appearance = { look: 'classic', cb: 'protanopia' };
+    try {
+      const saved = JSON.parse(localStorage.getItem(APPEARANCE_KEY));
+      if (saved && (saved.look === 'classic' || saved.look === 'colorblind')) appearance.look = saved.look;
+      if (saved && THEMES[saved.cb] && saved.cb !== 'classic') appearance.cb = saved.cb;
+    } catch (e) { /* bez úložiště nebo poškozená data */ }
+
+    const cbBox = el('cbTypes');
+    for (const btn of cbBox.querySelectorAll('[data-cb]')) {
+      const accent = THEMES[btn.dataset.cb].accent;
+      const sw = document.createElement('span');
+      sw.className = 'swatch';
+      sw.innerHTML = `<i style="background:${accent[1]}"></i><i style="background:${accent[2]}"></i>`;
+      btn.prepend(sw);
+    }
+
+    function applyAppearance() {
+      theme = appearance.look === 'classic' ? THEMES.classic : THEMES[appearance.cb];
+      const root = document.documentElement.style;
+      root.setProperty('--p1', theme.accent[1]);
+      root.setProperty('--p2', theme.accent[2]);
+      for (const b of menu.querySelectorAll('[data-look]')) b.classList.toggle('active', b.dataset.look === appearance.look);
+      for (const b of cbBox.querySelectorAll('[data-cb]')) b.classList.toggle('active', b.dataset.cb === appearance.cb);
+      cbBox.hidden = appearance.look !== 'colorblind';
+      try { localStorage.setItem(APPEARANCE_KEY, JSON.stringify(appearance)); } catch (e) { /* bez úložiště */ }
+    }
+    applyAppearance();
+
+    // --- Padající kostky na pozadí menu ---
+    const bgCanvas = el('menuBg');
+    const bgCtx = bgCanvas.getContext('2d');
+    const bgPieces = [];
+    let bgSpawnTimer = 0;
+
+    function resizeBg() {
+      bgCanvas.width = window.innerWidth;
+      bgCanvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resizeBg);
+    resizeBg();
+
+    function spawnBgPiece(anywhere) {
+      const i = Math.floor(Math.random() * TYPES.length);
+      let matrix = SHAPES[TYPES[i]];
+      for (let r = Math.floor(Math.random() * 4); r > 0; r--) matrix = rotateCW(matrix);
+      const s = 18 + Math.floor(Math.random() * 16);
+      const player = Math.random() < 0.5 ? 1 : 2;
+      bgPieces.push({
+        matrix, s,
+        v: player * 10 + i,
+        x: Math.round(Math.random() * Math.max(0, bgCanvas.width - matrix.length * s) / s) * s,
+        y: anywhere ? Math.random() * bgCanvas.height : -matrix.length * s,
+        speed: 25 + Math.random() * 55,
+      });
+    }
+    for (let i = 0; i < 18; i++) spawnBgPiece(true);
+
+    function updateBg(dt) {
+      bgSpawnTimer += dt;
+      if (bgSpawnTimer > 450 && bgPieces.length < 30) { bgSpawnTimer = 0; spawnBgPiece(false); }
+      for (let i = bgPieces.length - 1; i >= 0; i--) {
+        const p = bgPieces[i];
+        p.y += p.speed * dt / 1000;
+        if (p.y > bgCanvas.height) bgPieces.splice(i, 1);
+      }
+      bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+      bgCtx.globalAlpha = 0.3;
+      for (const p of bgPieces) {
+        p.matrix.forEach((r, my) => r.forEach((c, mx) => {
+          if (c) drawCell(bgCtx, p.x + mx * p.s, Math.round(p.y) + my * p.s, p.s, p.v);
+        }));
+      }
+      bgCtx.globalAlpha = 1;
+    }
 
     function act(pid, action) {
       const p = game.players[pid - 1];
@@ -471,26 +828,30 @@
     }
 
     overlay.addEventListener('click', e => {
-      const btn = e.target.closest('[data-mode]');
+      const btn = e.target.closest('button');
       if (!btn || game.state === 'playing') return;
       btn.blur();
-      setDual(btn.dataset.mode === 'dual');
+      if (btn.dataset.action === 'menu') {
+        if (tournament) { if (confirm('Ukončit turnaj? Průběh se ztratí.')) endTournament(); }
+        else showMenu();
+      } else if (btn.dataset.action === 'continue') finishMatch();
+      else if (btn.dataset.mode) setDual(btn.dataset.mode === 'dual');
     });
 
     window.addEventListener('keydown', e => {
+      if (menuOpen()) {
+        if (e.code === 'Escape' && currentView !== 'bracket') showView('main');
+        return;
+      }
       const mapped = (dual ? KEYMAP_DUAL : KEYMAP)[e.code];
       if (mapped || ['KeyP', 'KeyR', 'KeyM', 'Escape'].includes(e.code)) e.preventDefault();
 
-      if (game.state === 'ready' && (e.code === 'Space' || e.code === 'Enter' || e.code === 'NumpadEnter')) {
-        if (!e.repeat) game.start();
-        return;
-      }
       if (e.code === 'KeyM') {
-        if (!e.repeat && game.state !== 'playing') setDual(!dual);
+        if (!e.repeat && game.state !== 'playing' && !tournament) setDual(!dual);
         return;
       }
       if (e.code === 'KeyP' || e.code === 'Escape') { if (!e.repeat) game.togglePause(); return; }
-      if (e.code === 'KeyR' && (game.state === 'over' || game.state === 'paused')) {
+      if (e.code === 'KeyR' && (game.state === 'paused' || (game.state === 'over' && !tournament))) {
         game.reset();
         game.start();
         return;
@@ -539,13 +900,13 @@
       // Obdélník přes řady [a, b)
       const band = (a, b) => [(flip ? ROWS - b : a) * s, (b - a) * s];
 
-      ctx.fillStyle = '#0b0e17';
+      ctx.fillStyle = theme.bg[0];
       ctx.fillRect(0, 0, W, canvas.height);
       let [y0, h] = band(0, game.wallTop);
-      ctx.fillStyle = '#0f1a33';
+      ctx.fillStyle = theme.bg[1];
       ctx.fillRect(0, y0, W, h);
       [y0, h] = band(game.wallBot, ROWS);
-      ctx.fillStyle = '#2a1119';
+      ctx.fillStyle = theme.bg[2];
       ctx.fillRect(0, y0, W, h);
 
       ctx.strokeStyle = 'rgba(255,255,255,0.04)';
@@ -559,8 +920,7 @@
         for (let x = 0; x < COLS; x++) {
           const v = game.grid[y][x];
           if (v === EMPTY) continue;
-          if (v === WALL_P1 || v === WALL_P2) drawWall(ctx, x * s, ry(y), s, cellColor(v));
-          else drawBlock(ctx, x * s, ry(y), s, cellColor(v));
+          drawCell(ctx, x * s, ry(y), s, v);
         }
       }
 
@@ -568,7 +928,7 @@
         const top = Math.max(0, game.wallTop - 1);
         const bot = Math.min(ROWS, game.wallBot + 1);
         [y0, h] = band(top, bot);
-        ctx.fillStyle = PLAYER_COLORS[game.flash.player];
+        ctx.fillStyle = theme.accent[game.flash.player];
         ctx.globalAlpha = Math.min(1, game.flash.time / 400) * 0.45;
         ctx.fillRect(0, y0, W, h);
         ctx.globalAlpha = 1;
@@ -595,7 +955,7 @@
         }));
         ctx.globalAlpha = 1;
         pc.matrix.forEach((r, my) => r.forEach((c, mx) => {
-          if (c) drawBlock(ctx, (pc.x + mx) * s, ry(pc.y + my), s, color);
+          if (c) drawCell(ctx, (pc.x + mx) * s, ry(pc.y + my), s, p.id * 10 + TYPES.indexOf(pc.type));
         }));
       }
 
@@ -620,7 +980,7 @@
       ctx.lineWidth = 4;
       ctx.strokeStyle = 'rgba(0,0,0,0.85)';
       ctx.strokeText(label, canvas.width / 2, y);
-      ctx.fillStyle = f.lines >= 4 ? '#ffeb3b' : PLAYER_COLORS[f.player];
+      ctx.fillStyle = f.lines >= 4 ? '#ffeb3b' : theme.accent[f.player];
       ctx.fillText(label, canvas.width / 2, y);
       ctx.restore();
     }
@@ -640,8 +1000,7 @@
       const h = Math.max(...ys) - Math.min(...ys) + 1;
       const ox = (c.width - w * cs) / 2 - Math.min(...xs) * cs;
       const oy = (c.height - h * cs) / 2 - Math.min(...ys) * cs;
-      const color = cellColor(p.id * 10 + TYPES.indexOf(p.nextType));
-      for (const [x, y] of cells) drawBlock(nctx, ox + x * cs, oy + y * cs, cs, color);
+      for (const [x, y] of cells) drawCell(nctx, ox + x * cs, oy + y * cs, cs, p.id * 10 + TYPES.indexOf(p.nextType));
     }
 
     function modeSwitch() {
@@ -654,25 +1013,17 @@
     let lastOverlay = null;
     function renderOverlay() {
       let html = '';
-      if (game.state === 'ready') {
-        html = '<h1>Tetris<br>přetlačovaná</h1>' +
-          (dual
-            ? '<p>Každý hráč má své pole a kostky mu padají shora. Pod čárou ve středu vidíš, jak hraje soupeř.</p>'
-            : '<p>Hráč 1 hraje shora, hráč 2 zdola.</p>') +
-          '<p>Plná řada nezmizí – stane se zdí a zatlačí soupeře o řadu dál. ' +
-          'Soupeřovu zeď naopak tvoje plná řada zničí a uvolní ti místo.</p>' +
-          '<p>Víc řad najednou = silnější útok: 1 / 2 / 4 / 6.</p>' +
-          '<p>Vytlač soupeře z jeho poloviny!</p>' +
-          modeSwitch() +
-          '<p class="hint">Start: <kbd>Mezerník</kbd> nebo <kbd>Enter</kbd></p>';
-      } else if (game.state === 'paused') {
-        html = '<h1>Pauza</h1>' + modeSwitch() +
-          '<p class="hint"><kbd>P</kbd> pokračovat &nbsp; <kbd>R</kbd> nová hra</p>';
+      const menuButton = `<button type="button" class="btn" data-action="menu">${tournament ? 'Ukončit turnaj' : 'Hlavní menu'}</button>`;
+      if (game.state === 'paused') {
+        html = '<h1>Pauza</h1>' + (tournament ? '' : modeSwitch()) + menuButton +
+          '<p class="hint"><kbd>P</kbd> pokračovat &nbsp; <kbd>R</kbd> zápas znovu</p>';
       } else if (game.state === 'over') {
-        html = `<h1 class="winner-${game.winner}">Vítězí hráč ${game.winner}!</h1>` +
-          `<p>Hráč ${game.winner === 1 ? 2 : 1} prohrál: ${game.reason}</p>` +
-          modeSwitch() +
-          '<p class="hint"><kbd>R</kbd> nová hra</p>';
+        const w = game.winner - 1;
+        html = `<h1 class="winner-${game.winner}">Vítězí ${escapeHtml(nameOf(w))}!</h1>` +
+          `<p>Prohra – ${escapeHtml(nameOf(1 - w))}: ${game.reason}</p>` +
+          (tournament
+            ? '<button type="button" class="btn btn-primary" data-action="continue">Pokračovat</button>'
+            : modeSwitch() + menuButton + '<p class="hint"><kbd>R</kbd> nová hra</p>');
       }
       if (html !== lastOverlay) {
         overlay.innerHTML = html;
@@ -688,6 +1039,7 @@
       processHeld(dt);
       game.update(dt);
       render();
+      if (menuOpen()) updateBg(dt);
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
