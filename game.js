@@ -60,6 +60,7 @@
   class Game {
     constructor(rng) {
       this.rng = rng || Math.random;
+      this.speedUp = true; // plynulé zrychlování s délkou hry
       this.reset();
     }
 
@@ -99,9 +100,12 @@
 
     space(p) { return p.id === 1 ? this.wallTop : ROWS - this.wallBot; }
 
-    level() { return 1 + Math.floor(this.elapsed / 45000); }
+    level() { return this.speedUp ? 1 + Math.floor(this.elapsed / 45000) : 1; }
 
-    dropInterval() { return Math.max(90, 850 * Math.pow(0.82, this.level() - 1)); }
+    dropInterval() {
+      if (!this.speedUp) return 850;
+      return Math.max(90, 850 * Math.pow(0.82, this.elapsed / 45000));
+    }
 
     drawFromBag(p) {
       if (p.bag.length === 0) {
@@ -666,10 +670,15 @@
         if (m.winner !== null) cls += m.winner === side ? ' won' : ' lost';
         return `<div class="${cls}">${escapeHtml(t.players[id])}</div>`;
       };
+      const last = t.rounds.length - 1;
+      const champName = champion ? t.players[champion.winner === 0 ? champion.a : champion.b] : null;
       el('bracket').innerHTML = t.rounds.map((round, r) =>
-        `<div class="round"><h4>${roundName(r, t.rounds.length)}</h4><div class="matches">` +
-        round.map(m => `<div class="match${m === next ? ' next' : ''}">${slot(m, 0)}${slot(m, 1)}</div>`).join('') +
-        '</div></div>').join('');
+        `<div class="round${r === last ? ' final' : ''}"><h4>${roundName(r, t.rounds.length)}</h4><div class="matches">` +
+        round.map(m => `<div class="cell${m.winner !== null ? ' done' : ''}"><div class="match${m === next ? ' next' : ''}">${slot(m, 0)}${slot(m, 1)}</div></div>`).join('') +
+        '</div></div>').join('') +
+        '<div class="round champ"><h4>Vítěz</h4><div class="matches"><div class="cell">' +
+        `<div class="match champion"><div class="slot ${champName ? 'won' : 'empty'}">${champName ? escapeHtml(champName) : '?'}</div></div>` +
+        '</div></div></div>';
 
       el('bracketTitle').textContent = champion ? 'Turnaj skončil' : 'Pavouk turnaje';
       let msg = t.message;
@@ -766,6 +775,21 @@
       try { localStorage.setItem(APPEARANCE_KEY, JSON.stringify(appearance)); } catch (e) { /* bez úložiště */ }
     }
     applyAppearance();
+
+    // --- Postupné zrychlování ---
+    const SPEED_KEY = 'tetris-speed-up';
+    try { if (localStorage.getItem(SPEED_KEY) === 'off') game.speedUp = false; } catch (e) { /* bez úložiště */ }
+    function applySpeedUp() {
+      for (const b of menu.querySelectorAll('[data-speed]')) b.classList.toggle('active', (b.dataset.speed === 'on') === game.speedUp);
+      try { localStorage.setItem(SPEED_KEY, game.speedUp ? 'on' : 'off'); } catch (e) { /* bez úložiště */ }
+    }
+    menu.addEventListener('click', e => {
+      const btn = e.target.closest('[data-speed]');
+      if (!btn) return;
+      game.speedUp = btn.dataset.speed === 'on';
+      applySpeedUp();
+    });
+    applySpeedUp();
 
     // --- Padající kostky na pozadí menu ---
     const bgCanvas = el('menuBg');

@@ -244,7 +244,7 @@ kbd {
 
 .bracket {
   display: flex;
-  gap: 28px;
+  gap: 28px; /* šířka mezery je navázána na čáry níže (14px = polovina) */
   padding: 14px;
   overflow-x: auto;
   text-align: left;
@@ -252,14 +252,31 @@ kbd {
   border-radius: 10px;
   background: rgba(11, 14, 23, 0.88);
 }
-.round { display: flex; flex-direction: column; flex: 1 0 150px; }
+.round { display: flex; flex-direction: column; flex: 1 0 160px; }
 .round h4 { margin: 0 0 8px; text-align: center; font-size: 13px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.7; }
-.matches { flex: 1; display: flex; flex-direction: column; justify-content: space-around; gap: 12px; }
-.match { border: 1px solid #3a4560; border-radius: 6px; overflow: hidden; background: #141a28; }
+.matches { flex: 1; display: flex; flex-direction: column; }
+.cell { position: relative; flex: 1; display: flex; align-items: center; padding: 6px 0; }
+.match { position: relative; width: 100%; border: 1px solid #3a4560; border-radius: 6px; background: #141a28; }
 .match.next { border-color: #ffeb3b; box-shadow: 0 0 0 1px #ffeb3b; }
+.match.champion { border-color: #ffeb3b; }
+
 .slot { padding: 6px 10px; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.slot:first-child { border-radius: 5px 5px 0 0; }
+.slot:last-child { border-radius: 0 0 5px 5px; }
 .slot + .slot { border-top: 1px solid #2a3350; }
 .slot.empty, .slot.bye { opacity: 0.4; font-style: italic; }
 .slot.won { background: #1f5130; font-weight: bold; }
-.slot.won::after { content: ' ▸'; }
 .slot.lost { opacity: 0.45; text-decoration: line-through; }
+
+/* Čáry: vodorovná ven z každého zápasu, svislá spojuje dvojici, vodorovná vede do dalšího zápasu. */
+.cell::after { content: ''; position: absolute; right: -14px; width: 14px; top: 50%; border-top: 2px solid #3a4560; }
+.cell::before { content: ''; position: absolute; right: -14px; border-right: 2px solid #3a4560; }
+.cell:nth-child(odd)::before { top: 50%; bottom: 0; }
+.cell:nth-child(even)::before { top: 0; bottom: 50%; }
+.cell.done::after { border-top-color: #3fa563; }
+.round:not(:first-child) .match::before { content: ''; position: absolute; left: -15px; width: 14px; top: 50%; border-top: 2px solid #3a4560; }
+.round.final .cell::before { display: none; }
+.round.champ .cell::before, .round.champ .cell::after { display: none; }
+.round.final .cell.done::after, .round.champ .match::before { border-top-color: #3fa563; }
+
+.seg-label { text-align: left; font-size: 14px; opacity: 0.85; }
