@@ -60,7 +60,7 @@
   class Game {
     constructor(rng) {
       this.rng = rng || Math.random;
-      this.speedUp = true; // plynulé zrychlování s délkou hry
+      this.speedUp = false; // plynulé zrychlování s délkou hry (výchozí vypnuto)
       this.reset();
     }
 
@@ -510,7 +510,7 @@
     setDual(false);
 
     // --- Jména hráčů ---
-    const NAMES_KEY = 'tetris-player-names';
+    const NAMES_KEY = 'stack-rivals-player-names';
     const DEFAULT_NAMES = ['Hráč 1', 'Hráč 2'];
     let names = DEFAULT_NAMES.slice();
     try {
@@ -549,7 +549,8 @@
       currentView = name;
       for (const section of menu.querySelectorAll('[data-view]')) section.hidden = section.dataset.view !== name;
       const first = menu.querySelector(`[data-view="${name}"] button, [data-view="${name}"] input`);
-      if (first) first.focus();
+      if (first) first.focus({ preventScroll: true });
+      menu.scrollTop = 0;
     }
 
     function showMenu() {
@@ -747,7 +748,7 @@
     });
 
     // --- Vzhled ---
-    const APPEARANCE_KEY = 'tetris-appearance';
+    const APPEARANCE_KEY = 'stack-rivals-appearance';
     const appearance = { look: 'classic', cb: 'protanopia' };
     try {
       const saved = JSON.parse(localStorage.getItem(APPEARANCE_KEY));
@@ -777,8 +778,8 @@
     applyAppearance();
 
     // --- Postupné zrychlování ---
-    const SPEED_KEY = 'tetris-speed-up';
-    try { if (localStorage.getItem(SPEED_KEY) === 'off') game.speedUp = false; } catch (e) { /* bez úložiště */ }
+    const SPEED_KEY = 'stack-rivals-speed-up-v2';
+    try { if (localStorage.getItem(SPEED_KEY) === 'on') game.speedUp = true; } catch (e) { /* bez úložiště */ }
     function applySpeedUp() {
       for (const b of menu.querySelectorAll('[data-speed]')) b.classList.toggle('active', (b.dataset.speed === 'on') === game.speedUp);
       try { localStorage.setItem(SPEED_KEY, game.speedUp ? 'on' : 'off'); } catch (e) { /* bez úložiště */ }
@@ -899,6 +900,14 @@
       }
     }
 
+    function formatTime(ms) {
+      const total = Math.floor(ms / 1000);
+      const s = String(total % 60).padStart(2, '0');
+      const m = Math.floor(total / 60) % 60;
+      const h = Math.floor(total / 3600);
+      return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
+    }
+
     // --- Vykreslení ---
     function render() {
       renderBoard(views[0]);
@@ -912,6 +921,7 @@
       el('space1').textContent = game.space(game.players[0]);
       el('space2').textContent = game.space(game.players[1]);
       el('level').textContent = game.level();
+      el('time').textContent = formatTime(game.elapsed);
 
       renderOverlay();
     }
@@ -986,7 +996,7 @@
       renderFlashText(ctx, canvas, s, flip);
     }
 
-    const FLASH_LABELS = ['', '', 'Dvojitá', 'Trojitá', 'TETRIS'];
+    const FLASH_LABELS = ['', '', 'Dvojitá', 'Trojitá', 'RIVALS!'];
 
     function renderFlashText(ctx, canvas, s, flip) {
       const f = game.flash;

@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Tetris – přetlačovaná</title>
+  <title>Stack Rivals</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,7 +15,6 @@
       <dl>
         <dt>Útok celkem</dt><dd id="sent1">0</dd>
         <dt>Prostor</dt><dd id="space1">20</dd>
-        <dt>Úroveň</dt><dd id="level">1</dd>
       </dl>
       <div class="controls">
         <div><kbd>A</kbd> <kbd>D</kbd> pohyb</div>
@@ -50,12 +49,18 @@
       <h2><span id="name2">Hráč 2</span> <small class="only-single">(zdola)</small><small class="only-dual">(pravé pole)</small></h2>
     </aside>
   </main>
+
+  <div class="gameinfo">
+    <div><span>Čas hry</span><b id="time">0:00</b></div>
+    <div><span>Úroveň</span><b id="level">1</b></div>
+  </div>
   <div id="menu" class="menu">
     <canvas id="menuBg" class="menu-bg"></canvas>
     <section data-view="main" class="menu-card">
-      <h1>Tetris<br>přetlačovaná</h1>
+      <h1>Stack Rivals</h1>
       <button type="button" class="btn btn-primary" data-go="mode">Hrát</button>
-      <button type="button" class="btn btn-secondary" data-go="tsetup">Vytvořit turnaj</button>
+      <button type="button" class="btn btn-secondary btn-tournament" data-go="tsetup">Turnaj</button>
+      <button type="button" class="btn btn-secondary" data-go="howto">Jak hrát</button>
       <button type="button" class="btn btn-secondary" data-go="settings">Nastavení</button>
     </section>
 
@@ -69,8 +74,63 @@
       <button type="button" class="btn btn-link" data-go="main">Zpět</button>
     </section>
 
-    <section data-view="tsetup" class="menu-card" hidden>
-      <h2>Vytvořit turnaj</h2>
+    <section data-view="howto" class="menu-card howto" hidden>
+      <h2>Jak hrát</h2>
+
+      <div class="group">
+        <h3>Cíl hry</h3>
+        <p>Dva hráči sdílejí pole o 10 sloupcích a 40 řadách, každý má na začátku polovinu (20 řad). Hráč 1 hraje shora, hráč 2 zdola a kostky jim padají ke středu. Vyhrává ten, komu se soupeř nevejde na jeho polovinu, nebo ten, kdo soupeře vytlačí přes okraj pole.</p>
+      </div>
+
+      <div class="group">
+        <h3>Útok a přetlačování</h3>
+        <p>Dokončená plná řada nezmizí, ale zaútočí. Čím více řad vyčistíš jednou kostkou, tím silnější útok:</p>
+        <table class="howto-table">
+          <tr><th>Řady najednou</th><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+          <tr><th>Síla útoku</th><td>1</td><td>2</td><td>4</td><td>6</td></tr>
+        </table>
+        <ul>
+          <li>Pokud má soupeř ve středu zeď, tvoje řada a řada jeho zdi se navzájem zničí. Hranice se vrátí zpět a ty získáš místo.</li>
+          <li>Pokud zeď nemá, řada se změní ve tvou zeď. Zeď i se soupeřovými kostkami se posune k němu a ubude mu místo.</li>
+          <li>Bonusové jednotky útoku (síla nad počet vyčištěných řad) fungují stejně, jen nespotřebují tvou řadu.</li>
+        </ul>
+      </div>
+
+      <div class="group">
+        <h3>Ovládání</h3>
+        <table class="howto-table">
+          <tr><th></th><th>Hráč 1</th><th>Hráč 2</th></tr>
+          <tr><th>Pohyb</th><td><kbd>A</kbd> <kbd>D</kbd></td><td><kbd>←</kbd> <kbd>→</kbd></td></tr>
+          <tr><th>Otočení</th><td><kbd>W</kbd></td><td><kbd>↓</kbd> (jedno pole), <kbd>↑</kbd> (dvě pole)</td></tr>
+          <tr><th>Zrychlení</th><td><kbd>S</kbd></td><td><kbd>↑</kbd> (jedno pole), <kbd>↓</kbd> (dvě pole)</td></tr>
+          <tr><th>Shození</th><td><kbd>Mezerník</kbd></td><td><kbd>Enter</kbd></td></tr>
+        </table>
+        <p><kbd>P</kbd> nebo <kbd>Esc</kbd> pozastaví hru, <kbd>R</kbd> spustí novou hru.</p>
+      </div>
+
+      <div class="group">
+        <h3>Jedno pole, nebo dvě pole</h3>
+        <p>V režimu jednoho pole hrají oba hráči v jednom společném poli. V režimu dvou polí má každý své pole a kostky mu padají shora. Pole soupeře vidíš svisle převrácené pod čárou ve středu. Pravidla jsou stejná.</p>
+      </div>
+
+      <div class="group">
+        <h3>Turnaj</h3>
+        <p>Turnaj je vyřazovací. V nabídce <b>Turnaj</b> zvolíš počet hráčů (2 až 16), jejich jména a hrací pole (jedno, nebo dvě).</p>
+        <ul>
+          <li>Hráči se do pavouka rozlosují náhodně.</li>
+          <li>Hráč, který vyhraje zápas, postupuje do dalšího kola, poražený vypadává.</li>
+          <li>Při počtu hráčů, který není mocninou dvou (například 5 nebo 6), dostanou někteří hráči v prvním kole <b>volný los</b> a postupují bez hraní.</li>
+          <li>Tlačítkem <b>Zahájit turnaj</b> a poté <b>Další zápas</b> spouštíš zápasy jeden po druhém. Před každým je vidět, kdo hraje. Hráči stojí na stejných stranách jako v běžné hře: levý nebo horní hráč je první jmenovaný.</li>
+          <li>Po každém zápase se zobrazí aktualizovaný pavouk. Po finále se oznámí vítěz turnaje.</li>
+          <li>Turnaj lze kdykoli zrušit, ale průběh se pak ztratí.</li>
+        </ul>
+      </div>
+
+      <button type="button" class="btn btn-link" data-go="main">Zpět</button>
+    </section>
+
+    <section data-view="tsetup" class="menu-card tsetup" hidden>
+      <h2>Turnaj</h2>
 
       <div class="group">
         <h3>Počet hráčů</h3>

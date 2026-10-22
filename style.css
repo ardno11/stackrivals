@@ -178,6 +178,8 @@ kbd {
 }
 .btn-primary:hover, .btn-primary:focus-visible { background: #364a77; }
 .btn-secondary { font-size: 18px; }
+.btn-tournament { border-color: #44609c; background: #202a42; }
+.btn-tournament:hover, .btn-tournament:focus-visible { background: #273757; }
 .btn-link { border-color: transparent; background: none; font-size: 14px; opacity: 0.75; }
 .btn-link:hover, .btn-link:focus-visible { background: none; opacity: 1; text-decoration: underline; }
 
@@ -221,8 +223,19 @@ kbd {
 .swatch i:first-child { border-radius: 4px 0 0 4px; }
 .swatch i:last-child { border-radius: 0 4px 4px 0; }
 
+/* --- Jak hrát --- */
+.menu-card.howto { width: min(640px, 94vw); text-align: left; }
+.menu-card.howto h2 { text-align: center; }
+.howto p, .howto ul { margin: 0; font-size: 15px; line-height: 1.5; }
+.howto ul { padding-left: 20px; }
+.howto li + li { margin-top: 6px; }
+.howto-table { border-collapse: collapse; font-size: 15px; }
+.howto-table th, .howto-table td { padding: 6px 10px; border: 1px solid #1d2435; text-align: center; }
+.howto-table th { font-weight: bold; opacity: 0.85; }
+
 /* --- Turnaj --- */
 .menu-card.wide { width: min(980px, 96vw); }
+.menu-card.tsetup { margin: 6vh auto auto; }
 .stepper { display: flex; align-items: center; justify-content: center; gap: 18px; }
 .stepper .btn { width: 52px; font-size: 24px; padding: 4px 0; }
 .stepper output { min-width: 40px; font-size: 28px; font-weight: bold; }
@@ -280,3 +293,22 @@ kbd {
 .round.final .cell.done::after, .round.champ .match::before { border-top-color: #3fa563; }
 
 .seg-label { text-align: left; font-size: 14px; opacity: 0.85; }
+
+/* Čas a úroveň – mimo panely hráčů, vpravo nahoře (jedno pole) / vpravo dole (dvě pole). */
+.gameinfo {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  padding: 8px 12px;
+  border: 1px solid #1d2435;
+  border-radius: 8px;
+  background: rgba(11, 14, 23, 0.85);
+  text-align: right;
+}
+.gameinfo span { margin-right: 8px; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; opacity: 0.6; }
+.gameinfo b { font-size: 20px; font-variant-numeric: tabular-nums; }
+body:has(#app.dual) .gameinfo { top: auto; bottom: 12px; }

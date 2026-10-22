@@ -1,6 +1,6 @@
-# Tetris – přetlačovaná
+# Stack Rivals
 
-Tetris pro dva hráče na jedné klávesnici. Stačí otevřít `index.html` v prohlížeči.
+Hra s padajícími kostkami pro dva hráče na jedné klávesnici. Stačí otevřít `index.html` v prohlížeči.
 
 ## Pravidla
 
@@ -8,7 +8,7 @@ Tetris pro dva hráče na jedné klávesnici. Stačí otevřít `index.html` v p
 - Hráč 1 hraje shora, kostky mu padají ke středu. Hráč 2 hraje zdola, kostky mu „padají“ nahoru ke středu.
 - Dokončená plná řada nezmizí, ale **zaútočí**. Síla útoku závisí na tom, kolik řad hráč dokončí jednou kostkou:
 
-  | Plné řady najednou | 1 | 2 | 3 | 4 (Tetris) |
+  | Plné řady najednou | 1 | 2 | 3 | 4 (Rivals!) |
   |--------------------|---|---|---|-------------|
   | Síla útoku         | 1 | 2 | 4 | 6           |
 
