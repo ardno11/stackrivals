@@ -147,7 +147,7 @@
       p.lockResets = 0;
       p.dropAcc = 0;
       if (this.collides(p, p.piece.matrix, p.piece.x, p.piece.y)) {
-        this.lose(p, 'Nová kostka se mu už nevejde na jeho polovinu.');
+        this.lose(p, 'noRoom');
       }
     }
 
@@ -309,7 +309,7 @@
 
       if (p.id === 1) {
         if (g[ROWS - 1].some(c => c !== EMPTY)) {
-          this.lose(opp, 'Soupeř ho vytlačil z jeho poloviny.');
+          this.lose(opp, 'pushed');
           return;
         }
         for (let y = ROWS - 1; y > this.wallTop; y--) g[y] = g[y - 1];
@@ -317,7 +317,7 @@
         this.wallBot++;
       } else {
         if (g[0].some(c => c !== EMPTY)) {
-          this.lose(opp, 'Soupeř ho vytlačil z jeho poloviny.');
+          this.lose(opp, 'pushed');
           return;
         }
         for (let y = 0; y < this.wallBot - 1; y++) g[y] = g[y + 1];
@@ -331,7 +331,7 @@
         if (!this.collides(opp, pc.matrix, pc.x, pc.y + opp.edgeDir)) {
           pc.y += opp.edgeDir;
         } else {
-          this.lose(opp, 'Soupeř ho vytlačil z jeho poloviny.');
+          this.lose(opp, 'pushed');
         }
       }
     }
@@ -470,6 +470,8 @@
     const nextCanvases = { 1: document.getElementById('next1'), 2: document.getElementById('next2') };
     const overlay = document.getElementById('overlay');
     const el = id => document.getElementById(id);
+    const { t } = global.I18N;
+    global.I18N.apply();
     let cell = 20;
     let dual = false;
 
@@ -511,16 +513,18 @@
 
     // --- Jména hráčů ---
     const NAMES_KEY = 'stack-rivals-player-names';
-    const DEFAULT_NAMES = ['Hráč 1', 'Hráč 2'];
+    const DEFAULT_NAMES = ['', ''];
+    const defaultName = i => t('player' + (i + 1));
+    const isDefaultName = s => /^(Hráč|Player) [12]$/.test(s);
     let names = DEFAULT_NAMES.slice();
     try {
       const saved = JSON.parse(localStorage.getItem(NAMES_KEY));
-      if (Array.isArray(saved)) names = DEFAULT_NAMES.map((d, i) => (typeof saved[i] === 'string' ? saved[i] : d));
+      if (Array.isArray(saved)) names = DEFAULT_NAMES.map((d, i) => (typeof saved[i] === 'string' && !isDefaultName(saved[i]) ? saved[i] : d));
     } catch (e) { /* bez úložiště nebo poškozená data */ }
 
     let tournament = null; // { dual, players, rounds, current, started, message }
     let matchNames = null; // jména aktuálního zápasu turnaje
-    const nameOf = i => (matchNames ? matchNames[i] : names[i].trim() || DEFAULT_NAMES[i]);
+    const nameOf = i => (matchNames ? matchNames[i] : names[i].trim() || defaultName(i));
     const escapeHtml = s => s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
     const nameInputs = [el('nameInput1'), el('nameInput2')];
 
@@ -578,8 +582,17 @@
     });
     showView('main');
 
-    // --- Turnaj (pavouk, vyřazovací) ---
-    const MIN_PLAYERS = 2;
+    menu.addEventListener('click', e => {
+      const btn = e.target.closest('[data-lang]');
+      if (btn) global.I18N.setLang(btn.dataset.lang);
+    });
+    global.I18N.onChange(() => {
+      applyNames();
+      renderTournamentSetup();
+      lastOverlay = null;
+    });
+
+    // --- Turnaj (pavouk, vyřazovací) ---    const MIN_PLAYERS = 2;
     const MAX_PLAYERS = 16;
     const BYE = -1;
     let tCount = 4;
@@ -595,7 +608,7 @@
         input.type = 'text';
         input.maxLength = 16;
         input.autocomplete = 'off';
-        input.placeholder = `Hráč ${i + 1}`;
+        input.placeholder = t('playerN', { n: i + 1 });
         input.value = tNameValues[i];
         input.addEventListener('input', () => { tNameValues[i] = input.value; });
         tNamesBox.appendChild(input);
@@ -626,7 +639,7 @@
 
     function createTournament() {
       const players = [];
-      for (let i = 0; i < tCount; i++) players.push(tNameValues[i].trim() || `Hráč ${i + 1}`);
+      for (let i = 0; i < tCount; i++) players.push(tNameValues[i].trim() || t('playerN', { n: i + 1 }));
       let size = 2;
       while (size < players.length) size *= 2;
       const matchCount = size / 2;
@@ -656,38 +669,38 @@
 
     function roundName(r, total) {
       const fromEnd = total - 1 - r;
-      return ['Finále', 'Semifinále', 'Čtvrtfinále', 'Osmifinále'][fromEnd] || `Kolo ${r + 1}`;
+      return [t('bracket.final'), t('bracket.semi'), t('bracket.quarter'), t('bracket.r16')][fromEnd] || t('bracket.round', { n: r + 1 });
     }
 
     function renderBracket() {
-      const t = tournament;
-      const champion = t.rounds[t.rounds.length - 1][0].winner !== null ? t.rounds[t.rounds.length - 1][0] : null;
+      const tr = tournament;
+      const champion = tr.rounds[tr.rounds.length - 1][0].winner !== null ? tr.rounds[tr.rounds.length - 1][0] : null;
       const next = champion ? null : nextMatch();
       const slot = (m, side) => {
         const id = side === 0 ? m.a : m.b;
-        if (id === BYE) return '<div class="slot bye">volný los</div>';
+        if (id === BYE) return `<div class="slot bye">${t('bracket.bye')}</div>`;
         if (id === null) return '<div class="slot empty">?</div>';
         let cls = 'slot';
         if (m.winner !== null) cls += m.winner === side ? ' won' : ' lost';
-        return `<div class="${cls}">${escapeHtml(t.players[id])}</div>`;
+        return `<div class="${cls}">${escapeHtml(tr.players[id])}</div>`;
       };
-      const last = t.rounds.length - 1;
-      const champName = champion ? t.players[champion.winner === 0 ? champion.a : champion.b] : null;
-      el('bracket').innerHTML = t.rounds.map((round, r) =>
-        `<div class="round${r === last ? ' final' : ''}"><h4>${roundName(r, t.rounds.length)}</h4><div class="matches">` +
+      const last = tr.rounds.length - 1;
+      const champName = champion ? tr.players[champion.winner === 0 ? champion.a : champion.b] : null;
+      el('bracket').innerHTML = tr.rounds.map((round, r) =>
+        `<div class="round${r === last ? ' final' : ''}"><h4>${roundName(r, tr.rounds.length)}</h4><div class="matches">` +
         round.map(m => `<div class="cell${m.winner !== null ? ' done' : ''}"><div class="match${m === next ? ' next' : ''}">${slot(m, 0)}${slot(m, 1)}</div></div>`).join('') +
         '</div></div>').join('') +
-        '<div class="round champ"><h4>Vítěz</h4><div class="matches"><div class="cell">' +
+        `<div class="round champ"><h4>${t('bracket.winner')}</h4><div class="matches"><div class="cell">` +
         `<div class="match champion"><div class="slot ${champName ? 'won' : 'empty'}">${champName ? escapeHtml(champName) : '?'}</div></div>` +
         '</div></div></div>';
 
-      el('bracketTitle').textContent = champion ? 'Turnaj skončil' : 'Pavouk turnaje';
-      let msg = t.message;
-      if (champion) msg = `Vítěz turnaje: ${t.players[champion.winner === 0 ? champion.a : champion.b]}`;
-      else if (next) msg = (msg ? msg + ' ' : '') + `Další zápas: ${t.players[next.a]} – ${t.players[next.b]}.`;
+      el('bracketTitle').textContent = champion ? t('bracket.over') : t('bracket.title');
+      let msg = tr.message;
+      if (champion) msg = t('bracket.champion', { name: tr.players[champion.winner === 0 ? champion.a : champion.b] });
+      else if (next) msg = (msg ? msg + ' ' : '') + t('bracket.upNext', { a: tr.players[next.a], b: tr.players[next.b] });
       el('bracketMsg').textContent = msg;
       el('bracketMsg').classList.toggle('champion', !!champion);
-      el('bracketAction').textContent = champion ? 'Hlavní menu' : (t.started ? 'Další zápas' : 'Zahájit turnaj');
+      el('bracketAction').textContent = champion ? t('bracket.mainMenu') : (tr.started ? t('bracket.nextMatch') : t('bracket.start'));
       el('bracketCancel').hidden = !!champion;
     }
 
@@ -712,7 +725,7 @@
       const loser = tournament.players[side === 0 ? m.b : m.a];
       m.winner = side;
       tournament.current = null;
-      tournament.message = `${winner} postupuje, ${loser} vypadává.`;
+      tournament.message = t('bracket.advances', { winner, loser });
       propagate(tournament);
       matchNames = null;
       applyNames();
@@ -743,7 +756,7 @@
         if (nextMatch()) startMatch();
         else endTournament();
       } else if (btn.id === 'bracketCancel') {
-        if (confirm('Zrušit turnaj? Průběh se ztratí.')) endTournament();
+        if (confirm(t('confirm.cancelTournament'))) endTournament();
       }
     });
 
@@ -857,7 +870,7 @@
       if (!btn || game.state === 'playing') return;
       btn.blur();
       if (btn.dataset.action === 'menu') {
-        if (tournament) { if (confirm('Ukončit turnaj? Průběh se ztratí.')) endTournament(); }
+        if (tournament) { if (confirm(t('confirm.endTournament'))) endTournament(); }
         else showMenu();
       } else if (btn.dataset.action === 'continue') finishMatch();
       else if (btn.dataset.mode) setDual(btn.dataset.mode === 'dual');
@@ -996,12 +1009,12 @@
       renderFlashText(ctx, canvas, s, flip);
     }
 
-    const FLASH_LABELS = ['', '', 'Dvojitá', 'Trojitá', 'RIVALS!'];
+    const flashLabel = lines => (lines >= 2 ? t('flash.' + lines) : '');
 
     function renderFlashText(ctx, canvas, s, flip) {
       const f = game.flash;
       if (!f) return;
-      const label = (FLASH_LABELS[f.lines] ? FLASH_LABELS[f.lines] + '  ' : '') + '+' + f.power;
+      const label = (flashLabel(f.lines) ? flashLabel(f.lines) + '  ' : '') + '+' + f.power;
       const elapsed = FLASH_TIME - f.time;
       const rise = Math.min(1, elapsed / 600) * s;
       let y = f.player === 1 ? game.wallTop * s - 2 * s - rise : game.wallBot * s + 2 * s + rise;
@@ -1039,25 +1052,25 @@
 
     function modeSwitch() {
       return '<div class="mode-switch">' +
-        `<button type="button" data-mode="single" class="${dual ? '' : 'active'}">Jedno pole</button>` +
-        `<button type="button" data-mode="dual" class="${dual ? 'active' : ''}">Dvě pole</button>` +
-        '</div><p class="hint"><kbd>M</kbd> přepnout zobrazení</p>';
+        `<button type="button" data-mode="single" class="${dual ? '' : 'active'}">${t('mode.single')}</button>` +
+        `<button type="button" data-mode="dual" class="${dual ? 'active' : ''}">${t('mode.dual')}</button>` +
+        `</div><p class="hint">${t('overlay.switchView')}</p>`;
     }
 
     let lastOverlay = null;
     function renderOverlay() {
       let html = '';
-      const menuButton = `<button type="button" class="btn" data-action="menu">${tournament ? 'Ukončit turnaj' : 'Hlavní menu'}</button>`;
+      const menuButton = `<button type="button" class="btn" data-action="menu">${tournament ? t('overlay.endTournament') : t('overlay.mainMenu')}</button>`;
       if (game.state === 'paused') {
-        html = '<h1>Pauza</h1>' + (tournament ? '' : modeSwitch()) + menuButton +
-          '<p class="hint"><kbd>P</kbd> pokračovat &nbsp; <kbd>R</kbd> zápas znovu</p>';
+        html = `<h1>${t('overlay.pause')}</h1>` + (tournament ? '' : modeSwitch()) + menuButton +
+          `<p class="hint">${t('overlay.pauseHint')}</p>`;
       } else if (game.state === 'over') {
         const w = game.winner - 1;
-        html = `<h1 class="winner-${game.winner}">Vítězí ${escapeHtml(nameOf(w))}!</h1>` +
-          `<p>Prohra – ${escapeHtml(nameOf(1 - w))}: ${game.reason}</p>` +
+        html = `<h1 class="winner-${game.winner}">${escapeHtml(t('overlay.wins', { name: nameOf(w) }))}</h1>` +
+          `<p>${escapeHtml(t('overlay.loss', { name: nameOf(1 - w), reason: t('reason.' + game.reason) }))}</p>` +
           (tournament
-            ? '<button type="button" class="btn btn-primary" data-action="continue">Pokračovat</button>'
-            : modeSwitch() + menuButton + '<p class="hint"><kbd>R</kbd> nová hra</p>');
+            ? `<button type="button" class="btn btn-primary" data-action="continue">${t('overlay.continue')}</button>`
+            : modeSwitch() + menuButton + `<p class="hint">${t('overlay.newGameHint')}</p>`);
       }
       if (html !== lastOverlay) {
         overlay.innerHTML = html;

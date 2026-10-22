@@ -9,18 +9,18 @@
 <body>
   <main id="app">
     <aside class="panel p1">
-      <h2><span id="name1">Hráč 1</span> <small class="only-single">(shora)</small><small class="only-dual">(levé pole)</small></h2>
-      <div class="label">Další kostka</div>
+      <h2><span id="name1">Hráč 1</span> <small class="only-single" data-i18n="pos.top">(shora)</small><small class="only-dual" data-i18n="pos.left">(levé pole)</small></h2>
+      <div class="label" data-i18n="next">Další kostka</div>
       <canvas id="next1" class="next"></canvas>
       <dl>
-        <dt>Útok celkem</dt><dd id="sent1">0</dd>
-        <dt>Prostor</dt><dd id="space1">20</dd>
+        <dt data-i18n="attackTotal">Útok celkem</dt><dd id="sent1">0</dd>
+        <dt data-i18n="space">Prostor</dt><dd id="space1">20</dd>
       </dl>
       <div class="controls">
-        <div><kbd>A</kbd> <kbd>D</kbd> pohyb</div>
-        <div><kbd>W</kbd> otočení</div>
-        <div><kbd>S</kbd> zrychlit</div>
-        <div><kbd>Mezerník</kbd> shodit</div>
+        <div><kbd>A</kbd> <kbd>D</kbd> <span data-i18n="ctl.move">pohyb</span></div>
+        <div><kbd>W</kbd> <span data-i18n="ctl.rotate">otočení</span></div>
+        <div><kbd>S</kbd> <span data-i18n="ctl.soft">zrychlit</span></div>
+        <div><kbd data-i18n="key.space">Mezerník</kbd> <span data-i18n="ctl.hard">shodit</span></div>
       </div>
     </aside>
 
@@ -32,130 +32,134 @@
 
     <aside class="panel p2">
       <div class="controls">
-        <div><kbd>←</kbd> <kbd>→</kbd> pohyb</div>
-        <div class="only-single"><kbd>↓</kbd> otočení</div>
-        <div class="only-single"><kbd>↑</kbd> zrychlit</div>
-        <div class="only-dual"><kbd>↑</kbd> otočení</div>
-        <div class="only-dual"><kbd>↓</kbd> zrychlit</div>
-        <div><kbd>Enter</kbd> shodit</div>
-        <div class="common"><kbd>P</kbd> pauza &nbsp; <kbd>R</kbd> nová hra</div>
+        <div><kbd>←</kbd> <kbd>→</kbd> <span data-i18n="ctl.move">pohyb</span></div>
+        <div class="only-single"><kbd>↓</kbd> <span data-i18n="ctl.rotate">otočení</span></div>
+        <div class="only-single"><kbd>↑</kbd> <span data-i18n="ctl.soft">zrychlit</span></div>
+        <div class="only-dual"><kbd>↑</kbd> <span data-i18n="ctl.rotate">otočení</span></div>
+        <div class="only-dual"><kbd>↓</kbd> <span data-i18n="ctl.soft">zrychlit</span></div>
+        <div><kbd>Enter</kbd> <span data-i18n="ctl.hard">shodit</span></div>
+        <div class="common"><kbd>P</kbd> <span data-i18n="ctl.pause">pauza</span> &nbsp; <kbd>R</kbd> <span data-i18n="ctl.newGame">nová hra</span></div>
       </div>
       <dl>
-        <dt>Útok celkem</dt><dd id="sent2">0</dd>
-        <dt>Prostor</dt><dd id="space2">20</dd>
+        <dt data-i18n="attackTotal">Útok celkem</dt><dd id="sent2">0</dd>
+        <dt data-i18n="space">Prostor</dt><dd id="space2">20</dd>
       </dl>
-      <div class="label">Další kostka</div>
+      <div class="label" data-i18n="next">Další kostka</div>
       <canvas id="next2" class="next"></canvas>
-      <h2><span id="name2">Hráč 2</span> <small class="only-single">(zdola)</small><small class="only-dual">(pravé pole)</small></h2>
+      <h2><span id="name2">Hráč 2</span> <small class="only-single" data-i18n="pos.bottom">(zdola)</small><small class="only-dual" data-i18n="pos.right">(pravé pole)</small></h2>
     </aside>
   </main>
 
   <div class="gameinfo">
-    <div><span>Čas hry</span><b id="time">0:00</b></div>
-    <div><span>Úroveň</span><b id="level">1</b></div>
+    <div><span data-i18n="gameTime">Čas hry</span><b id="time">0:00</b></div>
+    <div><span data-i18n="level">Úroveň</span><b id="level">1</b></div>
   </div>
   <div id="menu" class="menu">
     <canvas id="menuBg" class="menu-bg"></canvas>
     <section data-view="main" class="menu-card">
       <h1>Stack Rivals</h1>
-      <button type="button" class="btn btn-primary" data-go="mode">Hrát</button>
-      <button type="button" class="btn btn-secondary btn-tournament" data-go="tsetup">Turnaj</button>
-      <button type="button" class="btn btn-secondary" data-go="howto">Jak hrát</button>
-      <button type="button" class="btn btn-secondary" data-go="settings">Nastavení</button>
+      <button type="button" class="btn btn-primary" data-go="mode" data-i18n="menu.play">Hrát</button>
+      <button type="button" class="btn btn-secondary btn-tournament" data-go="tsetup" data-i18n="menu.tournament">Turnaj</button>
+      <button type="button" class="btn btn-secondary" data-go="howto" data-i18n="menu.howto">Jak hrát</button>
+      <button type="button" class="btn btn-secondary" data-go="settings" data-i18n="menu.settings">Nastavení</button>
+      <div class="lang" role="group" aria-label="Language">
+        <button type="button" class="btn btn-link" data-lang="cs">Čeština</button>
+        <button type="button" class="btn btn-link" data-lang="en">English</button>
+      </div>
     </section>
 
     <section data-view="mode" class="menu-card" hidden>
-      <h2>Kde chcete hrát?</h2>
+      <h2 data-i18n="mode.title">Kde chcete hrát?</h2>
       <div class="mode-choice">
-        <button type="button" class="btn" data-start="single">Jedno pole</button>
-        <button type="button" class="btn" data-start="dual">Dvě pole</button>
+        <button type="button" class="btn" data-start="single" data-i18n="mode.single">Jedno pole</button>
+        <button type="button" class="btn" data-start="dual" data-i18n="mode.dual">Dvě pole</button>
       </div>
-      <p class="hint">Jedno pole: hráč 1 hraje shora, hráč 2 zdola.<br>Dvě pole: každý má své pole a kostky mu padají shora.</p>
-      <button type="button" class="btn btn-link" data-go="main">Zpět</button>
+      <p class="hint" data-i18n-html="mode.hint">Jedno pole: hráč 1 hraje shora, hráč 2 zdola.<br>Dvě pole: každý má své pole a kostky mu padají shora.</p>
+      <button type="button" class="btn btn-link" data-go="main" data-i18n="back">Zpět</button>
     </section>
 
     <section data-view="howto" class="menu-card howto" hidden>
-      <h2>Jak hrát</h2>
+      <h2 data-i18n="menu.howto">Jak hrát</h2>
 
       <div class="group">
-        <h3>Cíl hry</h3>
-        <p>Dva hráči sdílejí pole o 10 sloupcích a 40 řadách, každý má na začátku polovinu (20 řad). Hráč 1 hraje shora, hráč 2 zdola a kostky jim padají ke středu. Vyhrává ten, komu se soupeř nevejde na jeho polovinu, nebo ten, kdo soupeře vytlačí přes okraj pole.</p>
+        <h3 data-i18n="howto.goal.h">Cíl hry</h3>
+        <p data-i18n-html="howto.goal.p">Dva hráči sdílejí pole o 10 sloupcích a 40 řadách, každý má na začátku polovinu (20 řad). Hráč 1 hraje shora, hráč 2 zdola a kostky jim padají ke středu. Vyhrává ten, komu se soupeř nevejde na jeho polovinu, nebo ten, kdo soupeře vytlačí přes okraj pole.</p>
       </div>
 
       <div class="group">
-        <h3>Útok a přetlačování</h3>
-        <p>Dokončená plná řada nezmizí, ale zaútočí. Čím více řad vyčistíš jednou kostkou, tím silnější útok:</p>
+        <h3 data-i18n="howto.attack.h">Útok a přetlačování</h3>
+        <p data-i18n-html="howto.attack.p">Dokončená plná řada nezmizí, ale zaútočí. Čím více řad vyčistíš jednou kostkou, tím silnější útok:</p>
         <table class="howto-table">
-          <tr><th>Řady najednou</th><td>1</td><td>2</td><td>3</td><td>4</td></tr>
-          <tr><th>Síla útoku</th><td>1</td><td>2</td><td>4</td><td>6</td></tr>
+          <tr><th data-i18n="howto.rows">Řady najednou</th><td>1</td><td>2</td><td>3</td><td>4</td></tr>
+          <tr><th data-i18n="howto.power">Síla útoku</th><td>1</td><td>2</td><td>4</td><td>6</td></tr>
         </table>
         <ul>
-          <li>Pokud má soupeř ve středu zeď, tvoje řada a řada jeho zdi se navzájem zničí. Hranice se vrátí zpět a ty získáš místo.</li>
-          <li>Pokud zeď nemá, řada se změní ve tvou zeď. Zeď i se soupeřovými kostkami se posune k němu a ubude mu místo.</li>
-          <li>Bonusové jednotky útoku (síla nad počet vyčištěných řad) fungují stejně, jen nespotřebují tvou řadu.</li>
+          <li data-i18n-html="howto.attack.l1">Pokud má soupeř ve středu zeď, tvoje řada a řada jeho zdi se navzájem zničí. Hranice se vrátí zpět a ty získáš místo.</li>
+          <li data-i18n-html="howto.attack.l2">Pokud zeď nemá, řada se změní ve tvou zeď. Zeď i se soupeřovými kostkami se posune k němu a ubude mu místo.</li>
+          <li data-i18n-html="howto.attack.l3">Bonusové jednotky útoku (síla nad počet vyčištěných řad) fungují stejně, jen nespotřebují tvou řadu.</li>
         </ul>
       </div>
 
       <div class="group">
-        <h3>Ovládání</h3>
+        <h3 data-i18n="howto.controls.h">Ovládání</h3>
         <table class="howto-table">
-          <tr><th></th><th>Hráč 1</th><th>Hráč 2</th></tr>
-          <tr><th>Pohyb</th><td><kbd>A</kbd> <kbd>D</kbd></td><td><kbd>←</kbd> <kbd>→</kbd></td></tr>
-          <tr><th>Otočení</th><td><kbd>W</kbd></td><td><kbd>↓</kbd> (jedno pole), <kbd>↑</kbd> (dvě pole)</td></tr>
-          <tr><th>Zrychlení</th><td><kbd>S</kbd></td><td><kbd>↑</kbd> (jedno pole), <kbd>↓</kbd> (dvě pole)</td></tr>
-          <tr><th>Shození</th><td><kbd>Mezerník</kbd></td><td><kbd>Enter</kbd></td></tr>
+          <tr><th></th><th data-i18n="player1">Hráč 1</th><th data-i18n="player2">Hráč 2</th></tr>
+          <tr><th data-i18n="howto.move">Pohyb</th><td><kbd>A</kbd> <kbd>D</kbd></td><td><kbd>←</kbd> <kbd>→</kbd></td></tr>
+          <tr><th data-i18n="howto.rotate">Otočení</th><td><kbd>W</kbd></td><td data-i18n-html="howto.rotate2"><kbd>↓</kbd> (jedno pole), <kbd>↑</kbd> (dvě pole)</td></tr>
+          <tr><th data-i18n="howto.soft">Zrychlení</th><td><kbd>S</kbd></td><td data-i18n-html="howto.soft2"><kbd>↑</kbd> (jedno pole), <kbd>↓</kbd> (dvě pole)</td></tr>
+          <tr><th data-i18n="howto.hard">Shození</th><td><kbd data-i18n="key.space">Mezerník</kbd></td><td><kbd>Enter</kbd></td></tr>
         </table>
-        <p><kbd>P</kbd> nebo <kbd>Esc</kbd> pozastaví hru, <kbd>R</kbd> spustí novou hru.</p>
+        <p data-i18n-html="howto.keys"><kbd>P</kbd> nebo <kbd>Esc</kbd> pozastaví hru, <kbd>R</kbd> spustí novou hru.</p>
       </div>
 
       <div class="group">
-        <h3>Jedno pole, nebo dvě pole</h3>
-        <p>V režimu jednoho pole hrají oba hráči v jednom společném poli. V režimu dvou polí má každý své pole a kostky mu padají shora. Pole soupeře vidíš svisle převrácené pod čárou ve středu. Pravidla jsou stejná.</p>
+        <h3 data-i18n="howto.fields.h">Jedno pole, nebo dvě pole</h3>
+        <p data-i18n-html="howto.fields.p">V režimu jednoho pole hrají oba hráči v jednom společném poli. V režimu dvou polí má každý své pole a kostky mu padají shora. Pole soupeře vidíš svisle převrácené pod čárou ve středu. Pravidla jsou stejná.</p>
       </div>
 
       <div class="group">
-        <h3>Turnaj</h3>
-        <p>Turnaj je vyřazovací. V nabídce <b>Turnaj</b> zvolíš počet hráčů (2 až 16), jejich jména a hrací pole (jedno, nebo dvě).</p>
+        <h3 data-i18n="menu.tournament">Turnaj</h3>
+        <p data-i18n-html="howto.t.p">Turnaj je vyřazovací. V nabídce <b>Turnaj</b> zvolíš počet hráčů (2 až 16), jejich jména a hrací pole (jedno, nebo dvě).</p>
         <ul>
-          <li>Hráči se do pavouka rozlosují náhodně.</li>
-          <li>Hráč, který vyhraje zápas, postupuje do dalšího kola, poražený vypadává.</li>
-          <li>Při počtu hráčů, který není mocninou dvou (například 5 nebo 6), dostanou někteří hráči v prvním kole <b>volný los</b> a postupují bez hraní.</li>
-          <li>Tlačítkem <b>Zahájit turnaj</b> a poté <b>Další zápas</b> spouštíš zápasy jeden po druhém. Před každým je vidět, kdo hraje. Hráči stojí na stejných stranách jako v běžné hře: levý nebo horní hráč je první jmenovaný.</li>
-          <li>Po každém zápase se zobrazí aktualizovaný pavouk. Po finále se oznámí vítěz turnaje.</li>
-          <li>Turnaj lze kdykoli zrušit, ale průběh se pak ztratí.</li>
+          <li data-i18n-html="howto.t.l1">Hráči se do pavouka rozlosují náhodně.</li>
+          <li data-i18n-html="howto.t.l2">Hráč, který vyhraje zápas, postupuje do dalšího kola, poražený vypadává.</li>
+          <li data-i18n-html="howto.t.l3">Při počtu hráčů, který není mocninou dvou (například 5 nebo 6), dostanou někteří hráči v prvním kole <b>volný los</b> a postupují bez hraní.</li>
+          <li data-i18n-html="howto.t.l4">Tlačítkem <b>Zahájit turnaj</b> a poté <b>Další zápas</b> spouštíš zápasy jeden po druhém. Před každým je vidět, kdo hraje. Hráči stojí na stejných stranách jako v běžné hře: levý nebo horní hráč je první jmenovaný.</li>
+          <li data-i18n-html="howto.t.l5">Po každém zápase se zobrazí aktualizovaný pavouk. Po finále se oznámí vítěz turnaje.</li>
+          <li data-i18n-html="howto.t.l6">Turnaj lze kdykoli zrušit, ale průběh se pak ztratí.</li>
         </ul>
       </div>
 
-      <button type="button" class="btn btn-link" data-go="main">Zpět</button>
+      <button type="button" class="btn btn-link" data-go="main" data-i18n="back">Zpět</button>
     </section>
 
     <section data-view="tsetup" class="menu-card tsetup" hidden>
-      <h2>Turnaj</h2>
+      <h2 data-i18n="menu.tournament">Turnaj</h2>
 
       <div class="group">
-        <h3>Počet hráčů</h3>
+        <h3 data-i18n="tsetup.count">Počet hráčů</h3>
         <div class="stepper">
-          <button type="button" class="btn" data-count="-1" aria-label="Méně hráčů">−</button>
+          <button type="button" class="btn" data-count="-1" data-i18n-aria="tsetup.fewer" aria-label="Méně hráčů">−</button>
           <output id="tCount">4</output>
-          <button type="button" class="btn" data-count="1" aria-label="Více hráčů">+</button>
+          <button type="button" class="btn" data-count="1" data-i18n-aria="tsetup.more" aria-label="Více hráčů">+</button>
         </div>
       </div>
 
       <div class="group">
-        <h3>Jména hráčů</h3>
+        <h3 data-i18n="names">Jména hráčů</h3>
         <div id="tNames" class="tnames"></div>
       </div>
 
       <div class="group">
-        <h3>Hrací pole</h3>
+        <h3 data-i18n="tsetup.field">Hrací pole</h3>
         <div class="seg">
-          <button type="button" class="btn" data-tmode="single">Jedno pole</button>
-          <button type="button" class="btn" data-tmode="dual">Dvě pole</button>
+          <button type="button" class="btn" data-tmode="single" data-i18n="mode.single">Jedno pole</button>
+          <button type="button" class="btn" data-tmode="dual" data-i18n="mode.dual">Dvě pole</button>
         </div>
       </div>
 
-      <button type="button" class="btn btn-secondary" id="tCreate">Vytvořit pavouka</button>
-      <button type="button" class="btn btn-link" data-go="main">Zpět</button>
+      <button type="button" class="btn btn-secondary" id="tCreate" data-i18n="tsetup.create">Vytvořit pavouka</button>
+      <button type="button" class="btn btn-link" data-go="main" data-i18n="back">Zpět</button>
     </section>
 
     <section data-view="bracket" class="menu-card wide" hidden>
@@ -163,48 +167,49 @@
       <p id="bracketMsg" class="bracket-msg"></p>
       <div id="bracket" class="bracket"></div>
       <button type="button" class="btn btn-primary" id="bracketAction">Zahájit turnaj</button>
-      <button type="button" class="btn btn-link" id="bracketCancel">Zrušit turnaj</button>
+      <button type="button" class="btn btn-link" id="bracketCancel" data-i18n="bracket.cancel">Zrušit turnaj</button>
     </section>
 
     <section data-view="settings" class="menu-card" hidden>
-      <h2>Nastavení</h2>
+      <h2 data-i18n="menu.settings">Nastavení</h2>
 
       <div class="group">
-        <h3>Jména hráčů</h3>
-        <label class="field">Jméno 1. hráče
-          <input type="text" id="nameInput1" maxlength="16" placeholder="Hráč 1" autocomplete="off">
+        <h3 data-i18n="names">Jména hráčů</h3>
+        <label class="field"><span data-i18n="settings.name1">Jméno 1. hráče</span>
+          <input type="text" id="nameInput1" maxlength="16" data-i18n-ph="player1" placeholder="Hráč 1" autocomplete="off">
         </label>
-        <label class="field">Jméno 2. hráče
-          <input type="text" id="nameInput2" maxlength="16" placeholder="Hráč 2" autocomplete="off">
+        <label class="field"><span data-i18n="settings.name2">Jméno 2. hráče</span>
+          <input type="text" id="nameInput2" maxlength="16" data-i18n-ph="player2" placeholder="Hráč 2" autocomplete="off">
         </label>
-        <button type="button" class="btn btn-secondary" id="resetNames">Resetovat jména</button>
+        <button type="button" class="btn btn-secondary" id="resetNames" data-i18n="settings.reset">Resetovat jména</button>
       </div>
 
       <div class="group">
-        <h3>Vzhled</h3>
+        <h3 data-i18n="settings.look">Vzhled</h3>
         <div class="seg">
-          <button type="button" class="btn" data-look="classic">Klasický</button>
-          <button type="button" class="btn" data-look="colorblind">Pro barvoslepé</button>
+          <button type="button" class="btn" data-look="classic" data-i18n="settings.classic">Klasický</button>
+          <button type="button" class="btn" data-look="colorblind" data-i18n="settings.colorblind">Pro barvoslepé</button>
         </div>
         <div id="cbTypes" class="cb-types" hidden>
-          <button type="button" class="btn" data-cb="protanopia"><b>Protanopie</b><small>slabá červená a zelená</small></button>
-          <button type="button" class="btn" data-cb="tritanopia"><b>Tritanopie</b><small>slabá žlutá a modrá</small></button>
-          <button type="button" class="btn" data-cb="monochromacy"><b>Monochromacie</b><small>nevidí žádné barvy</small></button>
+          <button type="button" class="btn" data-cb="protanopia"><b data-i18n="cb.protanopia">Protanopie</b><small data-i18n="cb.protanopia.d">slabá červená a zelená</small></button>
+          <button type="button" class="btn" data-cb="tritanopia"><b data-i18n="cb.tritanopia">Tritanopie</b><small data-i18n="cb.tritanopia.d">slabá žlutá a modrá</small></button>
+          <button type="button" class="btn" data-cb="monochromacy"><b data-i18n="cb.monochromacy">Monochromacie</b><small data-i18n="cb.monochromacy.d">nevidí žádné barvy</small></button>
         </div>
       </div>
 
       <div class="group">
-        <h3>Hra</h3>
-        <div class="seg-label">Postupné zrychlování kostek</div>
+        <h3 data-i18n="settings.game">Hra</h3>
+        <div class="seg-label" data-i18n="settings.speed">Postupné zrychlování kostek</div>
         <div class="seg">
-          <button type="button" class="btn" data-speed="on">Zapnuto</button>
-          <button type="button" class="btn" data-speed="off">Vypnuto</button>
+          <button type="button" class="btn" data-speed="on" data-i18n="on">Zapnuto</button>
+          <button type="button" class="btn" data-speed="off" data-i18n="off">Vypnuto</button>
         </div>
       </div>
 
-      <button type="button" class="btn btn-link" data-go="main">Zpět</button>
+      <button type="button" class="btn btn-link" data-go="main" data-i18n="back">Zpět</button>
     </section>
   </div>
+  <script src="i18n.js"></script>
   <script src="game.js"></script>
 </body>
 </html>

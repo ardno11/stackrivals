@@ -1,6 +1,6 @@
 # Stack Rivals
 
-Hra s padajícími kostkami pro dva hráče na jedné klávesnici. Stačí otevřít `index.html` v prohlížeči.
+Hra s padajícími kostkami pro dva hráče na jedné klávesnici. Stačí otevřít `index.html` v prohlížeči. Jazyk (čeština / angličtina) se přepíná tlačítky na hlavní stránce a pamatuje se.
 
 ## Pravidla
 

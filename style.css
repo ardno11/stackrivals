@@ -182,6 +182,8 @@ kbd {
 .btn-tournament:hover, .btn-tournament:focus-visible { background: #273757; }
 .btn-link { border-color: transparent; background: none; font-size: 14px; opacity: 0.75; }
 .btn-link:hover, .btn-link:focus-visible { background: none; opacity: 1; text-decoration: underline; }
+.lang { display: flex; justify-content: center; gap: 8px; }
+.lang .btn.active { opacity: 1; font-weight: bold; text-decoration: underline; }
 
 .mode-choice { display: flex; gap: 14px; }
 .mode-choice .btn { flex: 1; padding: 28px 10px; font-size: 22px; }
