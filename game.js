@@ -592,7 +592,8 @@
       lastOverlay = null;
     });
 
-    // --- Turnaj (pavouk, vyřazovací) ---    const MIN_PLAYERS = 2;
+    // --- Turnaj (pavouk, vyřazovací) ---
+    const MIN_PLAYERS = 2;
     const MAX_PLAYERS = 16;
     const BYE = -1;
     let tCount = 4;
