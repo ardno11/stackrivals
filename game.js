@@ -478,7 +478,7 @@
     function resize() {
       const boards = dual ? 2 : 1;
       // Šířka bočních panelů, mezer a okrajů (viz style.css).
-      const chrome = 2 * 200 + (boards + 1) * 24 + 24 + boards * 4;
+      const chrome = 2 * (document.body.classList.contains('touch') ? 130 : 200) + (boards + 1) * 24 + 24 + boards * 4;
       const byHeight = Math.floor((window.innerHeight - 30) / ROWS);
       const byWidth = Math.floor((window.innerWidth - chrome) / (boards * COLS));
       cell = Math.max(10, Math.min(28, byHeight, byWidth));
@@ -869,7 +869,9 @@
       const btn = e.target.closest('button');
       if (!btn || game.state === 'playing') return;
       btn.blur();
-      if (btn.dataset.action === 'menu') {
+      if (btn.dataset.action === 'resume') game.togglePause();
+      else if (btn.dataset.action === 'restart') { game.reset(); game.start(); }
+      else if (btn.dataset.action === 'menu') {
         if (tournament) { if (confirm(t('confirm.endTournament'))) endTournament(); }
         else showMenu();
       } else if (btn.dataset.action === 'continue') finishMatch();
@@ -877,6 +879,7 @@
     });
 
     window.addEventListener('keydown', e => {
+      if (!menuOpen() && (KEYMAP[e.code] || e.code === 'KeyP')) setTouch(false);
       if (menuOpen()) {
         if (e.code === 'Escape' && currentView !== 'bracket') showView('main');
         return;
@@ -936,6 +939,7 @@
       el('level').textContent = game.level();
       el('time').textContent = formatTime(game.elapsed);
 
+      if (padDual !== dual) updatePadGlyphs();
       renderOverlay();
     }
 
@@ -1050,11 +1054,11 @@
       for (const [x, y] of cells) drawCell(nctx, ox + x * cs, oy + y * cs, cs, p.id * 10 + TYPES.indexOf(p.nextType));
     }
 
-    function modeSwitch() {
+    function modeSwitch(withHint) {
       return '<div class="mode-switch">' +
         `<button type="button" data-mode="single" class="${dual ? '' : 'active'}">${t('mode.single')}</button>` +
         `<button type="button" data-mode="dual" class="${dual ? 'active' : ''}">${t('mode.dual')}</button>` +
-        `</div><p class="hint">${t('overlay.switchView')}</p>`;
+        '</div>' + (withHint ? `<p class="hint">${t('overlay.switchView')}</p>` : '');
     }
 
     let lastOverlay = null;
@@ -1062,15 +1066,21 @@
       let html = '';
       const menuButton = `<button type="button" class="btn" data-action="menu">${tournament ? t('overlay.endTournament') : t('overlay.mainMenu')}</button>`;
       if (game.state === 'paused') {
-        html = `<h1>${t('overlay.pause')}</h1>` + (tournament ? '' : modeSwitch()) + menuButton +
-          `<p class="hint">${t('overlay.pauseHint')}</p>`;
+        html = `<h1>${t('overlay.pause')}</h1>` + (tournament ? '' : modeSwitch(!touchMode)) +
+          (touchMode
+            ? `<button type="button" class="btn btn-primary" data-action="resume">${t('overlay.resume')}</button>` +
+              `<button type="button" class="btn" data-action="restart">${t('overlay.restart')}</button>` + menuButton
+            : menuButton + `<p class="hint">${t('overlay.pauseHint')}</p>`);
       } else if (game.state === 'over') {
         const w = game.winner - 1;
         html = `<h1 class="winner-${game.winner}">${escapeHtml(t('overlay.wins', { name: nameOf(w) }))}</h1>` +
           `<p>${escapeHtml(t('overlay.loss', { name: nameOf(1 - w), reason: t('reason.' + game.reason) }))}</p>` +
           (tournament
             ? `<button type="button" class="btn btn-primary" data-action="continue">${t('overlay.continue')}</button>`
-            : modeSwitch() + menuButton + `<p class="hint">${t('overlay.newGameHint')}</p>`);
+            : modeSwitch(!touchMode) +
+              (touchMode
+                ? `<button type="button" class="btn btn-primary" data-action="restart">${t('overlay.newGame')}</button>` + menuButton
+                : menuButton + `<p class="hint">${t('overlay.newGameHint')}</p>`));
       }
       if (html !== lastOverlay) {
         overlay.innerHTML = html;
@@ -1078,6 +1088,63 @@
         lastOverlay = html;
       }
     }
+
+    // --- Dotykové ovládání (zapne se samo na zařízeních s dotykovou obrazovkou) ---
+    let touchMode = false;
+    let padDual = null;
+    const coarse = window.matchMedia('(pointer: coarse)');
+    const PAD = [['left', '◀'], ['right', '▶'], ['rotate', '⟳'], ['soft', ''], ['hard', '']];
+    const padButtons = [];
+
+    for (const pad of document.querySelectorAll('.touchpad')) {
+      const pid = Number(pad.dataset.player);
+      for (const [action, glyph] of PAD) {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'pad-btn pad-' + action;
+        btn.textContent = glyph;
+        const key = `pad${pid}-${action}`;
+        const release = () => held.delete(key);
+        btn.addEventListener('pointerdown', e => {
+          e.preventDefault();
+          btn.setPointerCapture(e.pointerId);
+          if (game.state !== 'playing') return;
+          act(pid, action);
+          if (action in DAS) held.set(key, { pid, action, timer: DAS[action] || ARR[action] });
+        });
+        btn.addEventListener('pointerup', release);
+        btn.addEventListener('pointercancel', release);
+        btn.addEventListener('lostpointercapture', release);
+        btn.addEventListener('contextmenu', e => e.preventDefault());
+        pad.appendChild(btn);
+        padButtons.push({ btn, pid, action });
+      }
+    }
+
+    function updatePadGlyphs() {
+      padDual = dual;
+      for (const { btn, pid, action } of padButtons) {
+        const down = pid === 1 || dual;
+        if (action === 'soft') btn.textContent = down ? '▼' : '▲';
+        else if (action === 'hard') btn.textContent = down ? '⏬' : '⏫';
+        btn.setAttribute('aria-label', t('ctl.' + (action === 'left' || action === 'right' ? 'move' : action)));
+      }
+    }
+    global.I18N.onChange(() => { padDual = null; });
+
+    function setTouch(value) {
+      if (value === touchMode) return;
+      touchMode = value;
+      document.body.classList.toggle('touch', value);
+      held.clear();
+      lastOverlay = null;
+      resize();
+    }
+
+    el('touchPause').addEventListener('click', () => game.togglePause());
+    window.addEventListener('pointerdown', e => { if (e.pointerType === 'touch') setTouch(true); }, true);
+    coarse.addEventListener('change', () => setTouch(coarse.matches));
+    setTouch(coarse.matches);
 
     let last = performance.now();
     function frame(now) {
