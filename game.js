@@ -939,7 +939,6 @@
       el('level').textContent = game.level();
       el('time').textContent = formatTime(game.elapsed);
 
-      if (padDual !== dual) updatePadGlyphs();
       renderOverlay();
     }
 
@@ -1091,46 +1090,78 @@
 
     // --- Dotykové ovládání (zapne se samo na zařízeních s dotykovou obrazovkou) ---
     let touchMode = false;
-    let padDual = null;
     const coarse = window.matchMedia('(pointer: coarse)');
-    const PAD = [['left', '◀'], ['right', '▶'], ['rotate', '⟳'], ['soft', ''], ['hard', '']];
-    const padButtons = [];
 
-    for (const pad of document.querySelectorAll('.touchpad')) {
-      const pid = Number(pad.dataset.player);
-      for (const [action, glyph] of PAD) {
-        const btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'pad-btn pad-' + action;
-        btn.textContent = glyph;
-        const key = `pad${pid}-${action}`;
-        const release = () => held.delete(key);
-        btn.addEventListener('pointerdown', e => {
-          e.preventDefault();
-          btn.setPointerCapture(e.pointerId);
-          if (game.state !== 'playing') return;
-          act(pid, action);
-          if (action in DAS) held.set(key, { pid, action, timer: DAS[action] || ARR[action] });
-        });
-        btn.addEventListener('pointerup', release);
-        btn.addEventListener('pointercancel', release);
-        btn.addEventListener('lostpointercapture', release);
-        btn.addEventListener('contextmenu', e => e.preventDefault());
-        pad.appendChild(btn);
-        padButtons.push({ btn, pid, action });
-      }
+    // Gesta: tah do stran posouvá, klepnutí otáčí, tah ke středu zrychluje, rychlý švih ke středu shazuje.
+    // Hráče určuje místo dotyku: v jednom poli horní/dolní polovina, ve dvou polích levé/pravé pole.
+    const boardWrap = document.querySelector('.board-wrap');
+    const gestures = new Map(); // pointerId -> stav gesta
+    const gesturePlayers = new Set();
+
+    function gesturePlayer(e) {
+      const r = boardWrap.getBoundingClientRect();
+      if (dual) return e.clientX < r.left + r.width / 2 ? 1 : 2;
+      return e.clientY < r.top + r.height / 2 ? 1 : 2;
     }
 
-    function updatePadGlyphs() {
-      padDual = dual;
-      for (const { btn, pid, action } of padButtons) {
-        const down = pid === 1 || dual;
-        if (action === 'soft') btn.textContent = down ? '▼' : '▲';
-        else if (action === 'hard') btn.textContent = down ? '⏬' : '⏫';
-        btn.setAttribute('aria-label', t('ctl.' + (action === 'left' || action === 'right' ? 'move' : action)));
+    boardWrap.addEventListener('pointerdown', e => {
+      if (!touchMode || e.pointerType === 'mouse' || game.state !== 'playing') return;
+      const pid = gesturePlayer(e);
+      if (gesturePlayers.has(pid)) return;
+      e.preventDefault();
+      boardWrap.setPointerCapture(e.pointerId);
+      gesturePlayers.add(pid);
+      gestures.set(e.pointerId, {
+        pid, x: e.clientX, y: e.clientY, startX: e.clientX, startY: e.clientY,
+        t0: performance.now(), accX: 0, accY: 0, moved: false, samples: [{ t: performance.now(), y: e.clientY }],
+      });
+    });
+
+    boardWrap.addEventListener('pointermove', e => {
+      const g = gestures.get(e.pointerId);
+      if (!g) return;
+      e.preventDefault();
+      if (game.state !== 'playing') return;
+      const dx = e.clientX - g.x;
+      const dy = e.clientY - g.y;
+      g.x = e.clientX;
+      g.y = e.clientY;
+      if (Math.hypot(e.clientX - g.startX, e.clientY - g.startY) > 12) g.moved = true;
+      const now = performance.now();
+      g.samples.push({ t: now, y: e.clientY });
+      while (g.samples.length > 1 && now - g.samples[0].t > 120) g.samples.shift();
+
+      const step = Math.max(cell, 14);
+      g.accX += dx;
+      while (Math.abs(g.accX) >= step) {
+        const dir = Math.sign(g.accX);
+        act(g.pid, dir < 0 ? 'left' : 'right');
+        g.accX -= dir * step;
       }
+      const toward = g.pid === 2 && !dual ? -dy : dy;
+      g.accY = Math.max(0, g.accY + toward);
+      while (g.accY >= step) {
+        act(g.pid, 'soft');
+        g.accY -= step;
+      }
+    });
+
+    function endGesture(e) {
+      const g = gestures.get(e.pointerId);
+      if (!g) return;
+      gestures.delete(e.pointerId);
+      gesturePlayers.delete(g.pid);
+      if (game.state !== 'playing' || e.type === 'pointercancel') return;
+      const now = performance.now();
+      if (!g.moved && now - g.t0 < 300) { act(g.pid, 'rotate'); return; }
+      const first = g.samples[0];
+      const sign = g.pid === 2 && !dual ? -1 : 1;
+      const speed = sign * (e.clientY - first.y) / Math.max(1, now - first.t);
+      if (speed > 1 && sign * (e.clientY - g.startY) > 2 * cell) act(g.pid, 'hard');
     }
-    global.I18N.onChange(() => { padDual = null; });
+    boardWrap.addEventListener('pointerup', endGesture);
+    boardWrap.addEventListener('pointercancel', endGesture);
+    boardWrap.addEventListener('contextmenu', e => { if (touchMode) e.preventDefault(); });
 
     function setTouch(value) {
       if (value === touchMode) return;
