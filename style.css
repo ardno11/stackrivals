@@ -328,7 +328,7 @@ body.touch .touchpad {
 body.touch .panel .touchpad { order: 9; margin-top: auto; }
 body.touch #app {
   height: 100dvh;
-  padding-bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: calc(94px + env(safe-area-inset-bottom, 0px));
 }
 body.touch:has(#app.dual) .gameinfo {
   top: 12px;
