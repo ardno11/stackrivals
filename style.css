@@ -325,7 +325,18 @@ body.touch .touchpad {
   user-select: none;
   -webkit-user-select: none;
 }
-.dual .p2 .touchpad { order: 4; }
+body.touch .panel .touchpad { order: 9; margin-top: auto; }
+body.touch:has(#app.dual) .gameinfo {
+  top: 12px;
+  bottom: auto;
+  right: auto;
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: row;
+  gap: 12px;
+  padding: 4px 10px;
+  pointer-events: none;
+}
 body.touch { touch-action: manipulation; -webkit-touch-callout: none; }
 body.touch .controls { display: none; }
 body.touch .panel { width: 130px; }
