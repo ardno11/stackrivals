@@ -479,7 +479,7 @@
       const boards = dual ? 2 : 1;
       // Šířka bočních panelů, mezer a okrajů (viz style.css).
       const chrome = 2 * (document.body.classList.contains('touch') ? 130 : 200) + (boards + 1) * 24 + 24 + boards * 4;
-      const byHeight = Math.floor((window.innerHeight - 30) / ROWS);
+      const byHeight = Math.floor((window.innerHeight - (document.body.classList.contains('touch') ? 56 : 30)) / ROWS);
       const byWidth = Math.floor((window.innerWidth - chrome) / (boards * COLS));
       cell = Math.max(10, Math.min(28, byHeight, byWidth));
       for (const v of views) {
