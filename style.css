@@ -315,14 +315,34 @@ kbd {
 .gameinfo b { font-size: 20px; font-variant-numeric: tabular-nums; }
 body:has(#app.dual) .gameinfo { top: auto; bottom: 12px; }
 
-/* --- Dotykové ovládání (gesta na hrací ploše) --- */
-.touch-pause, .touchhelp { display: none; }
-body.touch { touch-action: manipulation; -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; }
-body.touch .board-wrap { touch-action: none; }
+/* --- Dotykové ovládání --- */
+.touchpad, .touch-pause { display: none; }
+body.touch .touchpad {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+.dual .p2 .touchpad { order: 4; }
+body.touch { touch-action: manipulation; -webkit-touch-callout: none; }
 body.touch .controls { display: none; }
-body.touch .touchhelp { display: block; font-size: 13px; line-height: 1.6; opacity: 0.8; }
 body.touch .panel { width: 130px; }
 body.touch #app { gap: 12px; }
+.pad-btn {
+  min-height: 58px;
+  padding: 0;
+  border: 1px solid #3a4560;
+  border-radius: 10px;
+  background: #141a28;
+  color: inherit;
+  font-size: 26px;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.pad-btn:active { background: #2b3a5c; border-color: #4f7bd9; }
+.pad-hard { grid-column: 1 / span 2; background: #202a42; }
 body.touch .touch-pause {
   display: block;
   position: fixed;
